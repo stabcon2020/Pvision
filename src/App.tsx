@@ -20,9 +20,11 @@ export default function App() {
   const [sites, setSites] = useState<Site[]>([]);
   const [analytics, setAnalytics] = useState<FreshserviceAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  const fetchData = async () => {
+  const fetchData = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
     try {
       const [sitesRes, analyticsRes] = await Promise.all([
         axios.get("/api/sites"),
@@ -35,12 +37,13 @@ export default function App() {
       console.error("Fetch Error:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30s
+    const interval = setInterval(() => fetchData(), 5000); // Refresh every 5s
     return () => clearInterval(interval);
   }, []);
 
@@ -59,12 +62,22 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-6">
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              SYSTEM ACTIVE
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                SYSTEM ACTIVE
+              </div>
+              <p className="text-[10px] font-bold text-slate-400">SYNC: {lastUpdated.toLocaleTimeString()}</p>
             </div>
-            <p className="text-[10px] font-bold text-slate-400">SYNC: {lastUpdated.toLocaleTimeString()}</p>
+            <button 
+              onClick={() => fetchData(true)}
+              disabled={refreshing}
+              className={`p-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100 text-blue-600 ${refreshing ? 'animate-spin opacity-50' : ''}`}
+              title="Manual Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
           <button className="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-all border border-slate-200 text-slate-400">
             <Settings className="w-4 h-4" />
