@@ -7,6 +7,14 @@ import ping from "ping";
 
 dotenv.config();
 
+// Video Streams Configuration (HLS .m3u8)
+const STREAMS_CONFIG = [
+  { name: "Chamber 1", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+  { name: "Chamber 2", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+  { name: "Lobby Entry", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+  { name: "Public Gallery", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+];
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -35,14 +43,6 @@ async function startServer() {
       };
     });
   };
-
-  // Video Streams Configuration (HLS .m3u8)
-  const STREAMS_CONFIG = [
-    { name: "Chamber 1", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-    { name: "Chamber 2", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-    { name: "Lobby Entry", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-    { name: "Public Gallery", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-  ];
 
   app.get("/api/sites", async (req, res) => {
     const sites = getSites();
