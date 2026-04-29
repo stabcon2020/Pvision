@@ -102,7 +102,7 @@ export default function App() {
             </div>
             <div className="h-[90px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={analytics?.trends}>
+                <AreaChart data={analytics?.trends || []}>
                   <defs>
                     <linearGradient id="colorParlBlue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
@@ -129,10 +129,10 @@ export default function App() {
           <div className="space-y-3 shrink-0">
             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-800/50">ITSM Status</h2>
             <div className="grid grid-cols-2 gap-2">
-              <AnalyticsCard title="Open" value={analytics?.summary.open || 0} icon={Ticket} colorClass="text-blue-600" />
-              <AnalyticsCard title="Pending" value={analytics?.summary.pending || 0} icon={Timer} colorClass="text-amber-600" />
-              <AnalyticsCard title="Resolved" value={analytics?.summary.resolved || 0} icon={CheckCircle} colorClass="text-blue-500" />
-              <AnalyticsCard title="Closed" value={analytics?.summary.closed || 0} icon={AlertCircle} colorClass="text-slate-400" />
+              <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
+              <AnalyticsCard title="Pending" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
+              <AnalyticsCard title="Resolved" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-blue-500" />
+              <AnalyticsCard title="Closed" value={analytics?.summary?.closed || 0} icon={AlertCircle} colorClass="text-slate-400" />
             </div>
           </div>
 
