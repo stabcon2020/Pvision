@@ -85,9 +85,9 @@ export default function App() {
       </header>
 
       {/* Main Kiosk Content Area */}
-      <main className="flex-1 p-1 grid grid-cols-1 lg:grid-cols-5 gap-1 min-h-0 overflow-hidden">
-        {/* Gateway Matrix - Occupies 3 columns */}
-        <div className="lg:col-span-3 flex flex-col min-h-0 overflow-hidden gap-1">
+      <main className="flex-1 p-1 flex flex-col gap-1 min-h-0 overflow-hidden">
+        {/* Connectivity Matrix - Full Width Top */}
+        <div className="flex-1 min-h-0 flex flex-col gap-0.5">
           <div className="flex justify-between items-center px-1">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Connectivity Matrix</h2>
             <div className="flex items-center gap-2">
@@ -101,26 +101,25 @@ export default function App() {
               </div>
             </div>
           </div>
-          
-          <div className="flex-1 bg-white/50 rounded-lg p-1 border border-blue-100/50 overflow-y-auto hide-scrollbar">
+          <div className="flex-1 bg-white/50 rounded-lg p-1.5 border border-blue-100/50 overflow-y-auto hide-scrollbar">
             <SiteStatusGrid sites={sites} />
-          </div>
-
-          {/* Video Monitoring Section */}
-          <div className="flex flex-col gap-1 shrink-0">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">AV Monitoring</h2>
-            <div className="bg-white/50 rounded-lg p-1 border border-blue-100/50 shadow-sm shrink-0">
-               <VideoMonitoring streams={streams} />
-            </div>
           </div>
         </div>
 
-        {/* Sidebar Status - Column 4 & 5 */}
-        <div className="lg:col-span-2 flex flex-col gap-1 overflow-hidden">
-          {/* ITSM Section */}
-          <div className="space-y-1 shrink-0">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">ITSM Status</h2>
-            <div className="grid grid-cols-2 gap-1">
+        {/* Global Footer Grid - 4 Blocks Side-by-Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-1.5 h-[160px] shrink-0">
+          {/* Block 1: Video Streams */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Monitoring</h2>
+            <div className="flex-1 min-h-0">
+               <VideoMonitoring streams={streams} />
+            </div>
+          </div>
+
+          {/* Block 2: ITSM Status */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">ITSM Status</h2>
+            <div className="grid grid-cols-2 gap-1 flex-1 overflow-y-auto hide-scrollbar px-0.5">
               <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
               <AnalyticsCard title="Pending" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
               <AnalyticsCard title="Resolved" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-blue-500" />
@@ -128,22 +127,24 @@ export default function App() {
             </div>
           </div>
 
-          {/* Agent Section */}
-          <div className="flex flex-col gap-1 flex-1 min-h-0">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Service Desk</h2>
-            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded-lg p-0.5">
+          {/* Block 3: Service Desk */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Service Desk</h2>
+            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-0.5">
               <AgentPerformanceList agents={analytics?.agents} />
             </div>
           </div>
 
-          <div className="bg-blue-900 rounded-lg p-2 text-white shadow-lg shrink-0">
-            <div className="flex justify-between items-center mb-0.5">
+          {/* Block 4: Summary Card */}
+          <div className="bg-blue-900 rounded-lg p-3 text-white shadow-lg flex flex-col justify-center">
+            <div className="flex justify-between items-center mb-1">
               <p className="text-[6px] font-black opacity-60 uppercase">Network Summary</p>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black tracking-tighter leading-none">{sites.filter(s => s.status === 'online').length}</span>
-              <span className="text-blue-400 text-[8px] font-bold">/ {sites.length} ONLINE</span>
+              <span className="text-2xl font-black tracking-tighter leading-none">{sites.filter(s => s.status === 'online').length}</span>
+              <span className="text-blue-400 text-[10px] font-bold">/ {sites.length} ONLINE</span>
             </div>
+            <p className="text-[6px] text-blue-300 font-bold uppercase tracking-widest mt-1">Operational Nodes</p>
           </div>
         </div>
       </main>

@@ -74,16 +74,16 @@ export function SiteStatusGrid({ sites }: { sites: Site[] }) {
       {sites.map((site) => (
         <div
           key={site.id}
-          className="bg-white border border-slate-200 p-1 rounded flex items-center gap-1.5 group transition-all"
+          className="bg-white border border-slate-200 p-1.5 rounded flex items-center gap-2 group transition-all"
         >
           <div className={cn(
-            "w-1 h-5 rounded-full shrink-0",
+            "w-1 h-6 rounded-full shrink-0",
             site.status === "online" ? "bg-blue-500" : "bg-rose-500 animate-pulse"
           )} />
           <div className="min-w-0">
-            <p className="text-[9px] font-bold text-slate-900 truncate leading-tight tracking-tight">{site.name}</p>
-            <p className="text-[7px] text-slate-500 font-mono truncate leading-none">
-              {site.latency !== null ? `${site.latency}ms` : "OFF"}
+            <p className="text-[10px] font-bold text-slate-900 truncate leading-tight tracking-tight">{site.name}</p>
+            <p className="text-[8px] text-slate-500 font-mono truncate leading-none">
+              {site.latency !== null ? `${site.latency}ms` : "OFFLINE"}
             </p>
           </div>
         </div>
