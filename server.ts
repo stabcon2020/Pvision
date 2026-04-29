@@ -36,12 +36,12 @@ async function startServer() {
     });
   };
 
-  // Video Streams Configuration
+  // Video Streams Configuration (HLS .m3u8)
   const STREAMS_CONFIG = [
-    { name: "Chamber 1", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
-    { name: "Chamber 2", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
-    { name: "Lobby Entry", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
-    { name: "Public Gallery", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
+    { name: "Chamber 1", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+    { name: "Chamber 2", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+    { name: "Lobby Entry", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+    { name: "Public Gallery", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
   ];
 
   app.get("/api/sites", async (req, res) => {
