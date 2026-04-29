@@ -103,12 +103,26 @@ async function startServer() {
       // Statuses: 2=Open, 3=Pending, 4=Resolved, 5=Closed
       const fetchCount = async (status: number) => {
         try {
-          const resp = await axios.get(`https://${domain}/api/v2/tickets/filter?query="status:${status}"`, {
+          // Freshservice Filter API requires encoded query in quotes: ?query="status:2"
+          const resp = await axios.get(`https://${domain}/api/v2/tickets/filter`, {
+            params: { 
+              query: `"status:${status}"`,
+              per_page: 100 // Fetch up to 100 in the first page as fallback
+            },
             headers: { Authorization: authHeader }
           });
-          // Freshservice filter returns total count in header X-Search-Results-Count
-          return parseInt(resp.headers["x-search-results-count"] || "0", 10) || (resp.data.tickets?.length || 0);
-        } catch (e) {
+          
+          // Header x-search-results-count is the definitive count for filter API (up to 300)
+          const headerCount = resp.headers["x-search-results-count"];
+          if (headerCount) {
+            return parseInt(headerCount.toString(), 10);
+          }
+          
+          // Fallback if header is missing (e.g. if count > 300)
+          const tokens = resp.data.tickets || [];
+          return tokens.length;
+        } catch (e: any) {
+          console.error(`Error fetching count for status ${status}:`, e.message);
           return 0;
         }
       };
@@ -118,7 +132,12 @@ async function startServer() {
       ]);
 
       // 3. Fetch recent tickets for trends and agent activity (last 100)
-      const ticketsResponse = await axios.get(`https://${domain}/api/v2/tickets?per_page=100&order_by=created_at&order_type=desc`, {
+      const ticketsResponse = await axios.get(`https://${domain}/api/v2/tickets`, {
+        params: {
+          per_page: 100,
+          order_by: "created_at",
+          order_type: "desc"
+        },
         headers: { Authorization: authHeader }
       });
       const recentTickets = ticketsResponse.data.tickets || [];
