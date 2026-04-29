@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import axios from "axios";
 import dotenv from "dotenv";
+import ping from "ping";
 
 dotenv.config();
 
@@ -14,8 +15,8 @@ async function startServer() {
 
   // CONFIGURATION: Add your 36 gateway names and IP addresses here
   const SITE_CONFIG = [
-    { name: "Hobart Primary", url: "https://google.com", location: "South" },
-    { name: "Launceston North", url: "https://github.com", location: "North" },
+    { name: "Hobart Primary", url: "8.8.8.8", location: "South" },
+    { name: "Launceston North", url: "1.1.1.1", location: "North" },
     // Add additional sites here...
   ];
 
@@ -40,9 +41,28 @@ async function startServer() {
     const siteStatuses = await Promise.all(
       sites.map(async (site) => {
         try {
-          const start = Date.now();
-          await axios.get(site.url, { timeout: 3000 });
-          return { ...site, status: "online", latency: Date.now() - start };
+          // Extract host from URL if it's a full URL, otherwise use as is
+          let host = site.url;
+          if (host.startsWith("http")) {
+            try {
+              host = new URL(host).hostname;
+            } catch (e) {
+              // fallback to original if URL parsing fails
+            }
+          }
+
+          const res = await ping.promise.probe(host, {
+            timeout: 2, // 2 seconds
+            extra: ["-c", "1"] // send only 1 packet
+          });
+
+          const latency = typeof res.time === "number" ? res.time : (typeof res.time === "string" && res.time !== "unknown" ? parseFloat(res.time) : null);
+
+          return { 
+            ...site, 
+            status: res.alive ? "online" : "offline", 
+            latency: latency || null
+          };
         } catch (error) {
           return { ...site, status: "offline", latency: null };
         }
