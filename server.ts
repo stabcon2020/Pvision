@@ -89,56 +89,83 @@ async function startServer() {
       const authHeader = `Basic ${Buffer.from(`${FRESHSERVICE_API_KEY}:X`).toString("base64")}`;
       const domain = FRESHSERVICE_DOMAIN.replace(/\/$/, "");
       
-      // Fetch recent tickets to aggregate data
+      // 1. Fetch Agents to map IDs to Names
+      const agentsResponse = await axios.get(`https://${domain}/api/v2/agents?per_page=100`, {
+        headers: { Authorization: authHeader }
+      });
+      const agentsList = agentsResponse.data.agents || [];
+      const agentsNameMap: Record<string, string> = {};
+      agentsList.forEach((a: any) => {
+        agentsNameMap[a.id] = `${a.first_name || ""} ${a.last_name || ""}`.trim() || a.email;
+      });
+
+      // 2. Fetch specific counts for accuracy
+      // Statuses: 2=Open, 3=Pending, 4=Resolved, 5=Closed
+      const fetchCount = async (status: number) => {
+        try {
+          const resp = await axios.get(`https://${domain}/api/v2/tickets/filter?query="status:${status}"`, {
+            headers: { Authorization: authHeader }
+          });
+          // Freshservice filter returns total count in header X-Search-Results-Count
+          return parseInt(resp.headers["x-search-results-count"] || "0", 10) || (resp.data.tickets?.length || 0);
+        } catch (e) {
+          return 0;
+        }
+      };
+
+      const [countOpen, countPending, countResolved, countClosed] = await Promise.all([
+        fetchCount(2), fetchCount(3), fetchCount(4), fetchCount(5)
+      ]);
+
+      // 3. Fetch recent tickets for trends and agent activity (last 100)
       const ticketsResponse = await axios.get(`https://${domain}/api/v2/tickets?per_page=100&order_by=created_at&order_type=desc`, {
         headers: { Authorization: authHeader }
       });
-
-      const tickets = ticketsResponse.data.tickets || [];
+      const recentTickets = ticketsResponse.data.tickets || [];
       
       // Aggregate summary
       const summary = {
-        open: tickets.filter((t: any) => [2, 3].includes(t.status)).length,
-        pending: tickets.filter((t: any) => t.status === 3).length,
-        resolved: tickets.filter((t: any) => t.status === 4).length,
-        closed: tickets.filter((t: any) => t.status === 5).length,
-        overdue: tickets.filter((t: any) => t.is_overdue).length,
-        avg_response_time: "---" // Complex to calculate from one list
+        open: countOpen,
+        pending: countPending,
+        resolved: countResolved,
+        closed: countClosed,
+        overdue: recentTickets.filter((t: any) => t.is_overdue).length,
+        avg_response_time: "---"
       };
 
-      // Aggregate agents (Top 4)
+      // Aggregate agents (Top 4 based on recent activity)
       const agentMap: Record<string, any> = {};
-      tickets.forEach((t: any) => {
+      recentTickets.forEach((t: any) => {
         if (!t.responder_id) return;
-        if (!agentMap[t.responder_id]) {
-          agentMap[t.responder_id] = { id: t.responder_id, name: `Agent ${t.responder_id}`, resolved: 0, open: 0, avatar: "A" };
+        const responderId = t.responder_id.toString();
+        if (!agentMap[responderId]) {
+          const name = agentsNameMap[responderId] || `Agent ${responderId}`;
+          const initials = name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+          agentMap[responderId] = { id: responderId, name: name, resolved: 0, open: 0, avatar: initials || "A" };
         }
-        if ([4, 5].includes(t.status)) agentMap[t.responder_id].resolved++;
-        else agentMap[t.responder_id].open++;
+        if ([4, 5].includes(t.status)) agentMap[responderId].resolved++;
+        else agentMap[responderId].open++;
       });
 
-      const agents = Object.values(agentMap).slice(0, 4);
+      const agents = Object.values(agentMap)
+        .sort((a: any, b: any) => b.resolved - a.resolved)
+        .slice(0, 4);
 
-      // Simple mock trends based on ticket distribution if no better data
-      const trends = [
-        { name: "Mon", tickets: Math.floor(Math.random() * 10) + 5 },
-        { name: "Tue", tickets: Math.floor(Math.random() * 10) + 10 },
-        { name: "Wed", tickets: Math.floor(Math.random() * 10) + 15 },
-        { name: "Thu", tickets: Math.floor(Math.random() * 10) + 12 },
-        { name: "Fri", tickets: Math.floor(Math.random() * 10) + 20 },
-        { name: "Sat", tickets: Math.floor(Math.random() * 10) + 5 },
-        { name: "Sun", tickets: Math.floor(Math.random() * 10) + 3 },
-      ];
-
-      res.json({
-        mock: false,
-        summary,
-        agents,
-        trends
+      // 4. Trends (from recent tickets)
+      const dayCounts: Record<string, number> = { "Mon": 0, "Tue": 0, "Wed": 0, "Thu": 0, "Fri": 0, "Sat": 0, "Sun": 0 };
+      const daysOrder = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      recentTickets.forEach((t: any) => {
+        const d = new Date(t.created_at);
+        dayCounts[daysOrder[d.getDay()]]++;
       });
+      const trends = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => ({
+        name: day,
+        tickets: dayCounts[day]
+      }));
+
+      res.json({ mock: false, summary, agents, trends });
     } catch (error: any) {
       console.error("Freshservice API Error:", error.message);
-      // Fallback to mock data on error so the dashboard isn't blank
       res.json({
         mock: true,
         error: error.message,
