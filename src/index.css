@@ -34,8 +34,8 @@
 
 .kiosk-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.3rem;
 }
 
 .hide-scrollbar::-webkit-scrollbar {

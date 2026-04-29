@@ -85,42 +85,42 @@ export default function App() {
       </header>
 
       {/* Main Kiosk Content Area */}
-      <main className="flex-1 p-2 grid grid-cols-1 lg:grid-cols-5 gap-2 min-h-0 overflow-hidden">
+      <main className="flex-1 p-1 grid grid-cols-1 lg:grid-cols-5 gap-1 min-h-0 overflow-hidden">
         {/* Gateway Matrix - Occupies 3 columns */}
-        <div className="lg:col-span-3 flex flex-col min-h-0 overflow-hidden gap-1.5">
+        <div className="lg:col-span-3 flex flex-col min-h-0 overflow-hidden gap-1">
           <div className="flex justify-between items-center px-1">
-            <h2 className="text-[8px] font-black uppercase tracking-[0.15em] text-blue-800/50 leading-none py-1">Connectivity Matrix</h2>
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Connectivity Matrix</h2>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <span className="text-[7px] font-bold text-slate-400 uppercase">ON</span>
+                <div className="w-1 h-1 rounded-full bg-blue-500" />
+                <span className="text-[6px] font-bold text-slate-400 uppercase">ON</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span className="text-[7px] font-bold text-slate-400 uppercase">OFF</span>
+                <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
+                <span className="text-[6px] font-bold text-slate-400 uppercase">OFF</span>
               </div>
             </div>
           </div>
           
-          <div className="flex-1 bg-white/50 rounded-xl p-2 border border-blue-100/50 overflow-y-auto hide-scrollbar">
+          <div className="flex-1 bg-white/50 rounded-lg p-1 border border-blue-100/50 overflow-y-auto hide-scrollbar">
             <SiteStatusGrid sites={sites} />
           </div>
 
-          {/* Video Monitoring Section replaces Traffic chart */}
-          <div className="flex flex-col gap-1.5 shrink-0">
-            <h2 className="text-[8px] font-black uppercase tracking-[0.15em] text-blue-800/50 leading-none py-1">AV Monitoring // Streams</h2>
-            <div className="bg-white/50 rounded-xl p-2 border border-blue-100/50 shadow-sm shrink-0">
+          {/* Video Monitoring Section */}
+          <div className="flex flex-col gap-1 shrink-0">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">AV Monitoring</h2>
+            <div className="bg-white/50 rounded-lg p-1 border border-blue-100/50 shadow-sm shrink-0">
                <VideoMonitoring streams={streams} />
             </div>
           </div>
         </div>
 
         {/* Sidebar Status - Column 4 & 5 */}
-        <div className="lg:col-span-2 flex flex-col gap-2 overflow-hidden">
+        <div className="lg:col-span-2 flex flex-col gap-1 overflow-hidden">
           {/* ITSM Section */}
-          <div className="space-y-1.5 shrink-0">
-            <h2 className="text-[8px] font-black uppercase tracking-[0.15em] text-blue-800/50 leading-none py-1">ITSM Status</h2>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1 shrink-0">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">ITSM Status</h2>
+            <div className="grid grid-cols-2 gap-1">
               <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
               <AnalyticsCard title="Pending" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
               <AnalyticsCard title="Resolved" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-blue-500" />
@@ -129,24 +129,20 @@ export default function App() {
           </div>
 
           {/* Agent Section */}
-          <div className="flex flex-col gap-1.5 flex-1 min-h-0">
-            <h2 className="text-[8px] font-black uppercase tracking-[0.15em] text-blue-800/50 leading-none py-1">Service Desk Agents</h2>
-            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded-xl p-1">
+          <div className="flex flex-col gap-1 flex-1 min-h-0">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Service Desk</h2>
+            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded-lg p-0.5">
               <AgentPerformanceList agents={analytics?.agents} />
             </div>
           </div>
 
-          <div className="bg-blue-900 rounded-xl p-3 text-white shadow-lg shrink-0">
-            <div className="flex justify-between items-center mb-1">
-              <p className="text-[7px] font-black opacity-60 uppercase">Network Summary</p>
-              <div className="flex gap-0.5">
-                <div className="w-0.5 h-0.5 rounded-full bg-blue-400" />
-                <div className="w-0.5 h-0.5 rounded-full bg-blue-400/20" />
-              </div>
+          <div className="bg-blue-900 rounded-lg p-2 text-white shadow-lg shrink-0">
+            <div className="flex justify-between items-center mb-0.5">
+              <p className="text-[6px] font-black opacity-60 uppercase">Network Summary</p>
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-black tracking-tighter leading-none">{sites.filter(s => s.status === 'online').length}</span>
-              <span className="text-blue-400 text-[10px] font-bold">/ {sites.length} OPERATIONAL</span>
+              <span className="text-blue-400 text-[8px] font-bold">/ {sites.length} ONLINE</span>
             </div>
           </div>
         </div>
