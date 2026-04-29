@@ -51,7 +51,7 @@ function HLSPlayer({ url, name }: { url: string; name: string }) {
 
 export function VideoMonitoring({ streams }: { streams: monitoring_stream[] }) {
   return (
-    <div className="grid grid-cols-2 gap-1 h-[120px]">
+    <div className="grid grid-cols-2 gap-1 h-[100px]">
       {streams.map((stream) => (
         <div key={stream.id} className="relative bg-slate-900 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center h-full">
           {stream.status === "online" ? (
@@ -111,22 +111,22 @@ export function AnalyticsCard({
   colorClass?: string;
 }) {
   return (
-    <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-center">
-      <div className="flex justify-between items-center mb-0.5">
-        <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">{title}</p>
-        <Icon className={cn("w-3 h-3", colorClass)} />
+    <div className="bg-white p-1.5 rounded-lg border border-slate-100 shadow-sm flex flex-col justify-center">
+      <div className="flex justify-between items-center">
+        <p className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">{title}</p>
+        <Icon className={cn("w-2.5 h-2.5", colorClass)} />
       </div>
-      <div className="flex items-baseline gap-1.5">
-        <h3 className="text-lg font-black text-slate-900 leading-none">{value}</h3>
+      <div className="flex items-baseline gap-1">
+        <h3 className="text-base font-black text-slate-900 leading-none">{value}</h3>
         {change ? (
           <span className={cn(
-            "text-[8px] font-black",
+            "text-[7px] font-black",
             change.positive ? "text-blue-600" : "text-rose-600"
           )}>
             {change.value}
           </span>
         ) : subtitle ? (
-          <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">{subtitle}</span>
+          <span className="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">{subtitle}</span>
         ) : null}
       </div>
     </div>
@@ -136,23 +136,23 @@ export function AnalyticsCard({
 export function AgentPerformanceList({ agents }: { agents?: AgentPerformance[] }) {
   if (!agents) return null;
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {agents.map((agent) => (
-        <div key={agent.id} className="flex items-center gap-2 p-2 bg-white border border-slate-100 rounded-xl shadow-sm">
-          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[8px] uppercase border border-blue-200">
+        <div key={agent.id} className="flex items-center gap-1.5 p-1.5 bg-white border border-slate-100 rounded-lg shadow-sm">
+          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[7px] uppercase border border-blue-200">
             {agent.avatar}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-bold text-slate-900 truncate leading-tight">{agent.name}</p>
-            <p className="text-[7px] text-slate-500 font-medium tracking-tight">Active Support</p>
+            <p className="text-[8px] font-bold text-slate-900 truncate leading-tight">{agent.name}</p>
+            <p className="text-[6px] text-slate-500 font-medium tracking-tight">Active</p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] font-black text-blue-700 leading-none">{agent.resolved}</p>
-            <p className="text-[6px] text-slate-400 font-black uppercase tracking-tighter">Solved</p>
+            <p className="text-[8px] font-black text-blue-700 leading-none">{agent.resolved}</p>
+            <p className="text-[5px] text-slate-400 font-black uppercase tracking-tighter">Solved</p>
           </div>
-          <div className="text-right ml-1 border-l border-slate-100 pl-2">
-            <p className="text-[9px] font-black text-slate-400 leading-none">{agent.open}</p>
-            <p className="text-[6px] text-slate-400 font-black uppercase tracking-tighter">Open</p>
+          <div className="text-right ml-1 border-l border-slate-100 pl-1.5">
+            <p className="text-[8px] font-black text-slate-400 leading-none">{agent.open}</p>
+            <p className="text-[5px] text-slate-400 font-black uppercase tracking-tighter">Open</p>
           </div>
         </div>
       ))}

@@ -151,44 +151,44 @@ export default function App() {
           </div>
         </div>
 
-        {/* Global Footer Grid - 4 Blocks Side-by-Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-1.5 h-[160px] shrink-0">
+        {/* Global Footer Grid - Always 4 Columns Side-by-Side */}
+        <div className="grid grid-cols-4 gap-1 h-[140px] shrink-0 min-h-0">
           {/* Block 1: Video Streams */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Monitoring</h2>
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Stream</h2>
             <div className="flex-1 min-h-0">
                <VideoMonitoring streams={streams} />
             </div>
           </div>
 
           {/* Block 2: ITSM Status */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">ITSM Status</h2>
-            <div className="grid grid-cols-2 gap-1 flex-1 overflow-y-auto hide-scrollbar px-0.5">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">ITSM</h2>
+            <div className="grid grid-cols-2 gap-1 flex-1 px-0.5">
               <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
-              <AnalyticsCard title="Pending" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
-              <AnalyticsCard title="Resolved" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-blue-500" />
-              <AnalyticsCard title="Closed" value={analytics?.summary?.closed || 0} icon={AlertCircle} colorClass="text-slate-400" />
+              <AnalyticsCard title="Pend" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
+              <AnalyticsCard title="Res" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-blue-500" />
+              <AnalyticsCard title="Total" value={analytics?.summary?.closed || 0} icon={AlertCircle} colorClass="text-slate-400" />
             </div>
           </div>
 
           {/* Block 3: Service Desk */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Service Desk</h2>
             <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-0.5">
               <AgentPerformanceList agents={analytics?.agents} />
             </div>
           </div>
 
-          <div className="bg-blue-900 rounded-lg p-3 text-white shadow-lg flex flex-col justify-center">
-            <div className="flex justify-between items-center mb-1">
-              <p className="text-[6px] font-black opacity-60 uppercase">Network Summary</p>
+          <div className="bg-blue-900 rounded-lg p-2 text-white shadow-lg flex flex-col justify-center min-h-0 overflow-hidden">
+            <div className="flex justify-between items-center mb-0.5">
+              <p className="text-[6px] font-black opacity-60 uppercase">Network</p>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black tracking-tighter leading-none">{sites?.filter(s => s.status === 'online').length || 0}</span>
-              <span className="text-blue-400 text-[10px] font-bold">/ {sites?.length || 0} ONLINE</span>
+              <span className="text-xl font-black tracking-tighter leading-none">{sites?.filter(s => s.status === 'online').length || 0}</span>
+              <span className="text-blue-400 text-[8px] font-bold">/ {sites?.length || 0}</span>
             </div>
-            <p className="text-[6px] text-blue-300 font-bold uppercase tracking-widest mt-1">Operational Nodes</p>
+            <p className="text-[6px] text-blue-300 font-bold uppercase tracking-widest mt-0.5">Operational</p>
           </div>
         </div>
       </main>
