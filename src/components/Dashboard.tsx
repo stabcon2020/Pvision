@@ -17,10 +17,13 @@ function HLSPlayer({ url, name }: { url: string; name: string }) {
     const video = videoRef.current;
     if (!video) return;
 
-    if (Hls.isSupported()) {
+    if (typeof Hls !== "undefined" && Hls.isSupported()) {
       const hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(video);
+      return () => {
+        hls.destroy();
+      };
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = url;
     }

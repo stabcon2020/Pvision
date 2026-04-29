@@ -24,6 +24,8 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
+  const [error, setError] = useState<string | null>(null);
+
   const fetchData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
@@ -36,8 +38,10 @@ export default function App() {
       setAnalytics(analyticsRes.data);
       setStreams(streamsRes.data);
       setLastUpdated(new Date());
-    } catch (error) {
+      setError(null);
+    } catch (error: any) {
       console.error("Fetch Error:", error);
+      setError(`CONNECTION ERROR: ${error.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -49,6 +53,47 @@ export default function App() {
     const interval = setInterval(() => fetchData(), 5000); // Refresh every 5s
     return () => clearInterval(interval);
   }, []);
+
+  if (error && sites.length === 0) {
+    return (
+      <div className="h-screen bg-rose-950 text-white flex items-center justify-center p-8">
+        <div className="max-w-md w-full border border-rose-500/50 p-6 rounded-2xl bg-black/40 backdrop-blur-xl">
+          <div className="flex items-center gap-3 mb-4 text-rose-500">
+            <AlertCircle className="w-8 h-8" />
+            <h1 className="text-2xl font-black italic tracking-tighter">SYSTEM CRASH</h1>
+          </div>
+          <p className="text-xs font-mono text-rose-200/70 mb-6 leading-relaxed">
+            {error}
+            <br /><br />
+            Please check network connectivity or backend status.
+          </p>
+          <button 
+            onClick={() => fetchData(true)}
+            className="w-full py-3 bg-rose-600 hover:bg-rose-500 rounded-xl font-bold tracking-widest text-[10px] uppercase transition-all"
+          >
+            Force Reconnect
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && sites.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-blue-900 text-white font-black">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <RefreshCw className="animate-spin w-12 h-12 text-blue-400" />
+            <Building2 className="absolute inset-0 m-auto w-5 h-5 text-white" />
+          </div>
+          <div className="text-center">
+            <p className="text-xl tracking-tighter">INITIALIZING PARLVISION</p>
+            <p className="text-[10px] text-blue-400 uppercase tracking-widest mt-1">Connecting to gateway matrix...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-[#f0f4f8] text-slate-950 font-sans overflow-hidden flex flex-col text-[12px]">
@@ -135,14 +180,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* Block 4: Summary Card */}
           <div className="bg-blue-900 rounded-lg p-3 text-white shadow-lg flex flex-col justify-center">
             <div className="flex justify-between items-center mb-1">
               <p className="text-[6px] font-black opacity-60 uppercase">Network Summary</p>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black tracking-tighter leading-none">{sites.filter(s => s.status === 'online').length}</span>
-              <span className="text-blue-400 text-[10px] font-bold">/ {sites.length} ONLINE</span>
+              <span className="text-2xl font-black tracking-tighter leading-none">{sites?.filter(s => s.status === 'online').length || 0}</span>
+              <span className="text-blue-400 text-[10px] font-bold">/ {sites?.length || 0} ONLINE</span>
             </div>
             <p className="text-[6px] text-blue-300 font-bold uppercase tracking-widest mt-1">Operational Nodes</p>
           </div>
