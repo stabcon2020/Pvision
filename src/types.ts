@@ -7,6 +7,14 @@ export interface Site {
   latency: number | null;
 }
 
+export interface monitoring_stream {
+  id: string;
+  name: string;
+  url: string;
+  status: "online" | "offline";
+  thumbnail?: string;
+}
+
 export interface FreshserviceAnalytics {
   mock: boolean;
   summary: {

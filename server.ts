@@ -36,6 +36,14 @@ async function startServer() {
     });
   };
 
+  // Video Streams Configuration
+  const STREAMS_CONFIG = [
+    { name: "Chamber 1", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
+    { name: "Chamber 2", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
+    { name: "Lobby Entry", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
+    { name: "Public Gallery", url: "https://www.youtube.com/embed/jfKfPfyJRdk" },
+  ];
+
   app.get("/api/sites", async (req, res) => {
     const sites = getSites();
     const siteStatuses = await Promise.all(
@@ -214,7 +222,15 @@ async function startServer() {
       });
     }
   });
-
+  
+  app.get("/api/streams", (req, res) => {
+    res.json(STREAMS_CONFIG.map((s, i) => ({
+      id: `stream-${i}`,
+      ...s,
+      status: Math.random() > 0.1 ? "online" : "offline"
+    })));
+  });
+  
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

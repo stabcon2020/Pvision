@@ -1,11 +1,40 @@
 import React from "react";
 import { Activity, Globe, Wifi, WifiOff, Clock, User } from "lucide-react";
-import { Site, AgentPerformance } from "../types";
+import { Site, AgentPerformance, monitoring_stream } from "../types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Video, VideoOff } from "lucide-react";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function VideoMonitoring({ streams }: { streams: monitoring_stream[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 h-[140px]">
+      {streams.map((stream) => (
+        <div key={stream.id} className="relative group bg-slate-900 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center">
+          {stream.status === "online" ? (
+             <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
+               <Video className="w-5 h-5 text-blue-500/30" />
+               <div className="absolute top-1 left-1 flex items-center gap-1 bg-black/60 px-1 py-0.5 rounded backdrop-blur-sm border border-white/10">
+                 <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
+                 <span className="text-[6px] font-bold text-white uppercase tracking-tighter">LIVE</span>
+               </div>
+             </div>
+          ) : (
+             <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-1 opacity-50">
+               <VideoOff className="w-5 h-5 text-slate-700" />
+               <span className="text-[6px] font-bold text-slate-600 uppercase tracking-tighter">NO SIGNAL</span>
+             </div>
+          )}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+            <p className="text-[8px] font-bold text-white truncate uppercase tracking-tighter leading-none">{stream.name}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function SiteStatusGrid({ sites }: { sites: Site[] }) {
