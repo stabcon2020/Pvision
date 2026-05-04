@@ -283,13 +283,13 @@ async function startServer() {
         mock: true,
         lastSync: new Date().toISOString(),
         users: [
-          { name: "Support Manager", status: "Out of Office", avatar: "SM" },
-          { name: "Network Lead", status: "Available", avatar: "NL" },
-          { name: "Field Tech", status: "Out of Office", avatar: "FT" },
-          { name: "Systems Admin", status: "Available", avatar: "SA" },
-          { name: "Security Eng", status: "Out of Office", avatar: "SE" },
-          { name: "Project Lead", status: "Out of Office", avatar: "PL" },
-          { name: "Helpdesk Tier 2", status: "Available", avatar: "H2" },
+          { name: "Support Manager", status: "Out of Office", returnDate: "2026-05-10T17:00:00", avatar: "SM" },
+          { name: "Network Lead", status: "Available", returnDate: null, avatar: "NL" },
+          { name: "Field Tech", status: "Out of Office", returnDate: "2026-05-04T16:30:00", avatar: "FT" },
+          { name: "Systems Admin", status: "Available", returnDate: null, avatar: "SA" },
+          { name: "Security Eng", status: "Out of Office", returnDate: "2026-05-06T09:00:00", avatar: "SE" },
+          { name: "Project Lead", status: "Out of Office", returnDate: "2026-05-15T17:00:00", avatar: "PL" },
+          { name: "Helpdesk Tier 2", status: "Available", returnDate: null, avatar: "H2" },
         ]
       };
       return;
@@ -353,6 +353,7 @@ async function startServer() {
           id: user.id,
           name: user.displayName,
           status: isOOO ? "Out of Office" : "Available",
+          returnDate: ooo.scheduledEndDateTime?.dateTime || null,
           avatar: user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2),
         };
       });
