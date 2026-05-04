@@ -310,9 +310,9 @@ async function startServer() {
       );
       const accessToken = tokenResponse.data.access_token;
 
-      // 2. Fetch Users (Increasing limit to 600)
+      // 2. Fetch Users (Increasing limit to 600, filtering for enabled Members to exclude Shared Mailboxes/Guests)
       const usersResponse = await axios.get(
-        "https://graph.microsoft.com/v1.0/users?$top=600&$select=id,displayName,userPrincipalName",
+        "https://graph.microsoft.com/v1.0/users?$top=600&$select=id,displayName,userPrincipalName&$filter=accountEnabled eq true and userType eq 'Member'",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const users = usersResponse.data.value;
