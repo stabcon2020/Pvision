@@ -223,6 +223,83 @@ async function startServer() {
     }
   });
   
+  app.get("/api/weather", async (req, res) => {
+    try {
+      // Hobart Observation JSON from BOM
+      const response = await axios.get("http://www.bom.gov.au/fwo/IDT60901/IDT60901.94970.json", {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+      });
+      
+      const data = response.data.observations.data[0];
+      res.json({
+        temp: data.air_temp,
+        apparent_temp: data.apparent_t,
+        press: data.press,
+        rel_hum: data.rel_hum,
+        wind_spd_kmh: data.wind_spd_kmh,
+        wind_dir: data.wind_dir,
+        local_date_time: data.local_date_time,
+        name: "Hobart"
+      });
+    } catch (error: any) {
+      console.error("Weather API Error:", error.message);
+      res.status(500).json({ error: "Failed to fetch weather data" });
+    }
+  });
+
+  // Exchange Online (Microsoft Graph) OOO Status Proxy
+  app.get("/api/exchange/ooo", async (req, res) => {
+    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET, EXCHANGE_USER_PRINCIPAL_NAME } = process.env;
+
+    if (!EXCHANGE_TENANT_ID || !EXCHANGE_CLIENT_ID || !EXCHANGE_CLIENT_SECRET) {
+      // Mock data if credentials missing
+      return res.json({
+        mock: true,
+        users: [
+          { name: "Support Manager", status: "Out of Office", returnDate: "Tomorrow", avatar: "SM" },
+          { name: "Network Lead", status: "Available", returnDate: null, avatar: "NL" },
+          { name: "Field Tech", status: "On Site", returnDate: "16:00", avatar: "FT" },
+        ]
+      });
+    }
+
+    try {
+      // 1. Get Access Token
+      const tokenResponse = await axios.post(
+        `https://login.microsoftonline.com/${EXCHANGE_TENANT_ID}/oauth2/v2.0/token`,
+        new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: EXCHANGE_CLIENT_ID,
+          client_secret: EXCHANGE_CLIENT_SECRET,
+          scope: "https://graph.microsoft.com/.default",
+        }).toString(),
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+      );
+
+      const accessToken = tokenResponse.data.access_token;
+
+      // 2. Fetch OOO status for the configured user or a set of users
+      // This is a simplified example fetching mailbox settings for one user
+      const upn = EXCHANGE_USER_PRINCIPAL_NAME || "user@domain.com";
+      const graphResponse = await axios.get(
+        `https://graph.microsoft.com/v1.0/users/${upn}/mailboxSettings/automaticRepliesSetting`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      const ooo = graphResponse.data;
+      res.json({
+        mock: false,
+        status: ooo.status === "alwaysEnabled" || ooo.status === "scheduled" ? "Out of Office" : "Available",
+        details: ooo
+      });
+    } catch (error: any) {
+      console.error("Exchange API Error:", error.message);
+      res.status(500).json({ error: error.message, mock: true });
+    }
+  });
+
   app.get("/api/streams", (req, res) => {
     res.json(STREAMS_CONFIG.map((s, i) => ({
       id: `stream-${i}`,

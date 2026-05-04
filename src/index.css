@@ -55,3 +55,12 @@
 .animate-scanline {
   animation: scanline 2s linear infinite;
 }
+
+@keyframes flash-red {
+  0%, 100% { background-color: rgba(255, 255, 255, 1); border-color: #e2e8f0; }
+  50% { background-color: #fef2f2; border-color: #fecaca; }
+}
+
+.flash-red {
+  animation: flash-red 1s infinite ease-in-out;
+}

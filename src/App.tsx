@@ -11,15 +11,35 @@ import {
 } from "recharts";
 import { 
   LayoutDashboard, Server, Ticket, CheckCircle, AlertCircle, Timer,
-  RefreshCw, Settings, Search, Bell, Map, Share2, Activity, Globe, Building2
+  RefreshCw, Settings, Search, Bell, Map, Share2, Activity, Globe, Building2,
+  Cloud, Sun, CloudRain, Wind, Thermometer
 } from "lucide-react";
 import { Site, FreshserviceAnalytics, monitoring_stream } from "./types";
 import { SiteStatusGrid, AnalyticsCard, AgentPerformanceList, VideoMonitoring } from "./components/Dashboard";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+interface WeatherData {
+  temp: number;
+  apparent_temp: number;
+  press: number;
+  rel_hum: number;
+  wind_spd_kmh: number;
+  wind_dir: string;
+  local_date_time: string;
+  name: string;
+}
 
 export default function App() {
   const [sites, setSites] = useState<Site[]>([]);
   const [analytics, setAnalytics] = useState<FreshserviceAnalytics | null>(null);
   const [streams, setStreams] = useState<monitoring_stream[]>([]);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [oooStatus, setOooStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -29,14 +49,18 @@ export default function App() {
   const fetchData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const [sitesRes, analyticsRes, streamsRes] = await Promise.all([
+      const [sitesRes, analyticsRes, streamsRes, weatherRes, oooRes] = await Promise.all([
         axios.get("/api/sites"),
         axios.get("/api/freshservice/analytics"),
-        axios.get("/api/streams")
+        axios.get("/api/streams"),
+        axios.get("/api/weather"),
+        axios.get("/api/exchange/ooo")
       ]);
       setSites(sitesRes.data);
       setAnalytics(analyticsRes.data);
       setStreams(streamsRes.data);
+      setWeather(weatherRes.data);
+      setOooStatus(oooRes.data);
       setLastUpdated(new Date());
       setError(null);
     } catch (error: any) {
@@ -110,10 +134,34 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Hobart Weather Widget */}
+          {weather && (
+            <div className="flex items-center gap-3 px-3 py-1.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-black text-blue-900">{weather.temp}°C</span>
+                <span className="text-[7px] text-blue-400 font-bold uppercase tracking-tighter">Hobart</span>
+              </div>
+              <div className="w-px h-5 bg-blue-100/50" />
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                <div className="flex items-center gap-1">
+                  <Wind className="w-2.5 h-2.5 text-blue-400" />
+                  <span className="text-[7px] font-bold text-slate-500 uppercase">{weather.wind_spd_kmh}km/h {weather.wind_dir}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Activity className="w-2.5 h-2.5 text-blue-400" />
+                  <span className="text-[7px] font-bold text-slate-500 uppercase">{weather.rel_hum}% HUM</span>
+                </div>
+              </div>
+              <div className="text-blue-500">
+                {weather.temp > 20 ? <Sun className="w-4 h-4 fill-current opacity-70" /> : <Cloud className="w-4 h-4 fill-current opacity-70" />}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-1.5 text-[8px] font-bold text-blue-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                 ACTIVE
               </div>
               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">SYNC: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
@@ -137,12 +185,12 @@ export default function App() {
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Connectivity Matrix</h2>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <div className="w-1 h-1 rounded-full bg-blue-500" />
-                <span className="text-[6px] font-bold text-slate-400 uppercase">ON</span>
+                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                <span className="text-[6px] font-bold text-slate-400 uppercase">ONLINE</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
-                <span className="text-[6px] font-bold text-slate-400 uppercase">OFF</span>
+                <span className="text-[6px] font-bold text-slate-400 uppercase">OFFLINE</span>
               </div>
             </div>
           </div>
@@ -172,11 +220,38 @@ export default function App() {
             </div>
           </div>
 
-          {/* Block 3: Service Desk */}
+          {/* Block 3: Service Desk & Staff Presence */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Service Desk</h2>
-            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-0.5">
-              <AgentPerformanceList agents={analytics?.agents} />
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Service Desk</h2>
+              {oooStatus?.users && (
+                <span className="text-[6px] font-bold text-amber-600 uppercase tracking-widest leading-none bg-amber-50 px-1 py-0.5 rounded border border-amber-100/50">Staff Status Feed</span>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-1">
+              <div className="bg-white/30 rounded p-0.5">
+                <AgentPerformanceList agents={analytics?.agents} />
+              </div>
+              
+              {oooStatus?.users && (
+                <div className="border-t border-blue-100/30 pt-1 mt-0.5">
+                  <div className="flex flex-col gap-0.5">
+                    {oooStatus.users.map((user: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-1.5 px-1 py-0.5 bg-white/20 rounded-md">
+                        <div className={cn(
+                          "w-1 h-1 rounded-full",
+                          user.status === "Available" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
+                        )} />
+                        <span className="text-[7px] font-bold text-slate-600 truncate flex-1">{user.name}</span>
+                        <span className={cn(
+                          "text-[6px] font-black uppercase tracking-tighter px-1 rounded-[2px]",
+                          user.status === "Available" ? "text-emerald-600 bg-emerald-50/50" : "text-amber-600 bg-amber-50/50"
+                        )}>{user.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity, Globe, Wifi, WifiOff, Clock, User } from "lucide-react";
+import { Activity, Globe, Wifi, WifiOff, Clock, User, AlertCircle } from "lucide-react";
 import { Site, AgentPerformance, monitoring_stream } from "../types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -72,25 +72,69 @@ export function VideoMonitoring({ streams }: { streams: monitoring_stream[] }) {
 }
 
 export function SiteStatusGrid({ sites }: { sites: Site[] }) {
+  const offlineSites = sites.filter(s => s.status === 'offline');
+  const onlineSites = sites.filter(s => s.status === 'online');
+
   return (
-    <div className="kiosk-grid">
-      {sites.map((site) => (
-        <div
-          key={site.id}
-          className="bg-white border border-slate-200 p-1.5 rounded flex items-center gap-2 group transition-all"
-        >
-          <div className={cn(
-            "w-1 h-6 rounded-full shrink-0",
-            site.status === "online" ? "bg-blue-500" : "bg-rose-500 animate-pulse"
-          )} />
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-900 truncate leading-tight tracking-tight">{site.name}</p>
-            <p className="text-[8px] text-slate-500 font-mono truncate leading-none">
-              {site.latency !== null ? `${site.latency}ms` : "OFFLINE"}
-            </p>
+    <div className="flex flex-col gap-4">
+      {offlineSites.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5 px-1">
+            <AlertCircle className="w-2.5 h-2.5 text-rose-500 animate-pulse" />
+            <span className="text-[7px] font-black text-rose-900 uppercase tracking-widest leading-none">Critical Outages ({offlineSites.length})</span>
           </div>
+          <div className="kiosk-grid">
+            {offlineSites.map((site) => (
+              <div key={site.id}>
+                <SiteCard site={site} />
+              </div>
+            ))}
+          </div>
+          <div className="h-px bg-rose-100/50 my-1" />
         </div>
-      ))}
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5 px-1">
+          <Globe className="w-2.5 h-2.5 text-emerald-500/50" />
+          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Healthy Operational Nodes ({onlineSites.length})</span>
+        </div>
+        <div className="kiosk-grid">
+          {onlineSites.map((site) => (
+            <div key={site.id}>
+              <SiteCard site={site} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SiteCard({ site }: { site: Site }) {
+  return (
+    <div
+      className={cn(
+        "bg-white border border-slate-200 p-1.5 rounded flex items-center gap-2 group transition-all",
+        site.status === "offline" && "flash-red border-rose-200 shadow-[0_0_15px_rgba(225,29,72,0.1)]"
+      )}
+    >
+      <div className={cn(
+        "w-1 h-6 rounded-full shrink-0",
+        site.status === "online" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.5)]"
+      )} />
+      <div className="min-w-0">
+        <p className={cn(
+          "text-[10px] font-bold truncate leading-tight tracking-tight",
+          site.status === "online" ? "text-slate-900" : "text-rose-900"
+        )}>{site.name}</p>
+        <p className={cn(
+          "text-[8px] font-mono truncate leading-none",
+          site.status === "online" ? "text-slate-500" : "text-rose-500/70"
+        )}>
+          {site.latency !== null ? `${site.latency}ms` : "OFFLINE"}
+        </p>
+      </div>
     </div>
   );
 }
