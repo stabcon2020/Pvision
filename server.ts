@@ -31,9 +31,43 @@ async function startServer() {
   app.use(express.json());
 
   // Parse SITE_CONFIG from environment or use defaults
-  const DEFAULT_SITES = [
-    { name: "Hobart Primary", url: "8.8.8.8", location: "South" },
-    { name: "Launceston North", url: "1.1.1.1", location: "North" },
+  const DEFAULT_SITES: any[] = [
+    { name: "Derwent", url: "172.18.166.241", location: "South" },
+    { name: "Elwick", url: "172.18.167.1", location: "South" },
+    { name: "Hobart", url: "172.18.173.1", location: "South" },
+    { name: "Huon", url: "172.18.166.97", location: "South" },
+    { name: "Launceston", url: "172.18.173.177", location: "South" },
+    { name: "McIntyre", url: "172.18.167.209", location: "South" },
+    { name: "Mersey", url: "172.18.167.241", location: "South" },
+    { name: "Montgomery", url: "172.18.167.225", location: "South" },
+    { name: "Murchison", url: "172.18.167.97", location: "South" },
+    { name: "Nelson", url: "172.18.173.49", location: "South" },
+    { name: "Pembroke", url: "172.18.167.177", location: "South" },
+    { name: "Prosser", url: "172.18.166.225", location: "South" },
+    { name: "Rosevears", url: "172.18.173.129", location: "South" },
+    { name: "Rumney", url: "172.18.167.145", location: "South" },
+    { name: "Windermere", url: "172.18.173.193", location: "South" },
+    { name: "Greens - Hobart", url: "172.18.174.97", location: "South" },
+    { name: "Greens - Launceston", url: "172.18.173.241", location: "South" },
+    { name: "Greens - Sorell", url: "172.18.174.33", location: "South" },
+    { name: "Ind - North Hobart", url: "172.18.174.65", location: "South" },
+    { name: "Ind - Glenorchy", url: "172.18.167.193", location: "South" },
+    { name: "Ind - Kingston", url: "172.18.174.129", location: "South" },
+    { name: "Ind - Launceston", url: "172.18.173.145", location: "South" },
+    { name: "Ind - Midway Point", url: "172.18.173.161", location: "South" },
+    { name: "Ind - Rosny", url: "172.18.166.1", location: "South" },
+    { name: "Ind - Wynyard", url: "172.18.174.1", location: "South" },
+    { name: "Labor - Burnie", url: "172.18.167.129", location: "South" },
+    { name: "Labor - Devonport", url: "172.18.167.65", location: "South" },
+    { name: "Labor - Invermay", url: "172.18.174.81", location: "South" },
+    { name: "Labor - Kingston", url: "172.18.173.1", location: "South" },
+    { name: "Labor - Launceston", url: "172.18.167.49", location: "South" },
+    { name: "Labor - Rosny Park", url: "172.18.173.225", location: "South" },
+    { name: "Labor - Sorell", url: "172.18.166.129", location: "South" },
+    { name: "Labor - Bridgewater", url: "172.18.167.81", location: "South" },
+    { name: "Labor - Glenorchy", url: "172.18.174.49", location: "South" },
+    { name: "Labor - Hobart", url: "172.18.173.17", location: "South" },
+    { name: "Liberal - Rosny", url: "172.18.174.145", location: "South" },
   ];
 
   let SITE_CONFIG = DEFAULT_SITES;
@@ -47,18 +81,10 @@ async function startServer() {
 
   // Helper to ensure we have a full grid of 36 for the kiosk display
   const getSites = () => {
-    if (SITE_CONFIG.length >= 36) return SITE_CONFIG.map((s, i) => ({ ...s, id: `gw-${i}` }));
-    
-    const prefixes = ["Hobart", "Launceston", "Burnie", "Sorell", "Kingston", "Wynyard"];
-    return Array.from({ length: 36 }).map((_, i) => {
-      const config = SITE_CONFIG[i];
-      return {
-        id: `gateway-${i + 1}`,
-        name: config?.name || `${prefixes[i % prefixes.length]} Gateway ${Math.floor(i / prefixes.length) + 1}`,
-        url: config?.url || "https://google.com",
-        location: config?.location || (i < 10 ? "Metropolitan" : "Regional Tasmania")
-      };
-    });
+    return SITE_CONFIG.map((s, i) => ({
+      ...s,
+      id: `gw-${i}`
+    }));
   };
 
   app.get("/api/sites", async (req, res) => {
@@ -276,8 +302,16 @@ async function startServer() {
     mock: false
   };
 
+  let calendarCache: any = {
+    events: [],
+    lastSync: null,
+    isSyncing: false,
+    error: null,
+    mock: false
+  };
+
   async function syncExchange() {
-    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET } = process.env;
+    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET, HELPDESK_CALENDAR_EMAIL } = process.env;
     if (!EXCHANGE_TENANT_ID || !EXCHANGE_CLIENT_ID || !EXCHANGE_CLIENT_SECRET) {
       oooCache = {
         mock: true,
@@ -292,10 +326,22 @@ async function startServer() {
           { name: "Helpdesk Tier 2", status: "Available", returnDate: null, avatar: "H2" },
         ]
       };
+
+      calendarCache = {
+        mock: true,
+        lastSync: new Date().toISOString(),
+        events: [
+          { subject: "Weekly Team Sync", start: "2026-05-04T09:00:00", end: "2026-05-04T10:00:00", location: "Teams" },
+          { subject: "Network Maintenance", start: "2026-05-04T11:00:00", end: "2026-05-04T13:00:00", location: "Datacenter" },
+          { subject: "Staff Lunch", start: "2026-05-04T13:00:00", end: "2026-05-04T14:00:00", location: "Breakroom" },
+          { subject: "Security Patching", start: "2026-05-04T15:00:00", end: "2026-05-04T17:00:00", location: "Remote" },
+        ]
+      };
       return;
     }
 
     oooCache.isSyncing = true;
+    calendarCache.isSyncing = true;
     try {
       // 1. Get Access Token
       const tokenResponse = await axios.post(
@@ -310,7 +356,38 @@ async function startServer() {
       );
       const accessToken = tokenResponse.data.access_token;
 
-      // 2. Fetch Users (Increasing limit to 600, filtering for enabled Members to exclude Shared Mailboxes/Guests)
+      // 2. Fetch Calendar Events (If email provided)
+      if (HELPDESK_CALENDAR_EMAIL) {
+        try {
+          const now = new Date();
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+          const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+          
+          const calendarResponse = await axios.get(
+            `https://graph.microsoft.com/v1.0/users/${HELPDESK_CALENDAR_EMAIL}/calendarView?startDateTime=${startOfDay}&endDateTime=${endOfDay}&$select=subject,start,end,location&$orderby=start/dateTime`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          
+          calendarCache = {
+            mock: false,
+            events: calendarResponse.data.value.map((ev: any) => ({
+              subject: ev.subject,
+              start: ev.start.dateTime,
+              end: ev.end.dateTime,
+              location: ev.location?.displayName || "N/A"
+            })),
+            lastSync: new Date().toISOString(),
+            isSyncing: false,
+            error: null
+          };
+        } catch (calErr: any) {
+          console.error("Calendar Sync Error:", calErr.message);
+          calendarCache.error = calErr.message;
+          calendarCache.isSyncing = false;
+        }
+      }
+
+      // 3. Fetch Users (Increasing limit to 600, filtering for enabled Members to exclude Shared Mailboxes/Guests)
       const usersResponse = await axios.get(
         "https://graph.microsoft.com/v1.0/users?$top=600&$select=id,displayName,userPrincipalName&$filter=accountEnabled eq true and userType eq 'Member'",
         { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -395,6 +472,10 @@ async function startServer() {
   // Exchange Online Proxy returns the cache instantly
   app.get("/api/exchange/ooo", (req, res) => {
     res.json(oooCache);
+  });
+
+  app.get("/api/exchange/calendar", (req, res) => {
+    res.json(calendarCache);
   });
 
   app.get("/api/streams", (req, res) => {

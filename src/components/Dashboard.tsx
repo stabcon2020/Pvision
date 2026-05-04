@@ -115,21 +115,21 @@ function SiteCard({ site }: { site: Site }) {
   return (
     <div
       className={cn(
-        "bg-white border border-slate-200 p-1.5 rounded flex items-center gap-2 group transition-all",
+        "bg-white border border-slate-200 p-1 rounded flex items-center gap-1.5 group transition-all",
         site.status === "offline" && "flash-red border-rose-200 shadow-[0_0_15px_rgba(225,29,72,0.1)]"
       )}
     >
       <div className={cn(
-        "w-1 h-6 rounded-full shrink-0",
+        "w-0.5 h-5 rounded-full shrink-0",
         site.status === "online" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.5)]"
       )} />
       <div className="min-w-0">
         <p className={cn(
-          "text-[10px] font-bold truncate leading-tight tracking-tight",
+          "text-[8px] font-bold truncate leading-tight tracking-tight uppercase",
           site.status === "online" ? "text-slate-900" : "text-rose-900"
         )}>{site.name}</p>
         <p className={cn(
-          "text-[8px] font-mono truncate leading-none",
+          "text-[7px] font-mono truncate leading-none opacity-70",
           site.status === "online" ? "text-slate-500" : "text-rose-500/70"
         )}>
           {site.latency !== null ? `${site.latency}ms` : "OFFLINE"}

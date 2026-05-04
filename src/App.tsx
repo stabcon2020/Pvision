@@ -12,7 +12,7 @@ import {
 import { 
   LayoutDashboard, Server, Ticket, CheckCircle, AlertCircle, Timer,
   RefreshCw, Settings, Search, Bell, Map, Share2, Activity, Globe, Building2,
-  Cloud, Sun, CloudRain, Wind, Thermometer
+  Cloud, Sun, CloudRain, Wind, Thermometer, Calendar, Clock
 } from "lucide-react";
 import { Site, FreshserviceAnalytics, monitoring_stream } from "./types";
 import { SiteStatusGrid, AnalyticsCard, AgentPerformanceList, VideoMonitoring } from "./components/Dashboard";
@@ -40,6 +40,7 @@ export default function App() {
   const [streams, setStreams] = useState<monitoring_stream[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [oooStatus, setOooStatus] = useState<any>(null);
+  const [calendar, setCalendar] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -49,18 +50,20 @@ export default function App() {
   const fetchData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const [sitesRes, analyticsRes, streamsRes, weatherRes, oooRes] = await Promise.all([
+      const [sitesRes, analyticsRes, streamsRes, weatherRes, oooRes, calRes] = await Promise.all([
         axios.get("/api/sites"),
         axios.get("/api/freshservice/analytics"),
         axios.get("/api/streams"),
         axios.get("/api/weather"),
-        axios.get("/api/exchange/ooo")
+        axios.get("/api/exchange/ooo"),
+        axios.get("/api/exchange/calendar")
       ]);
       setSites(sitesRes.data);
       setAnalytics(analyticsRes.data);
       setStreams(streamsRes.data);
       setWeather(weatherRes.data);
       setOooStatus(oooRes.data);
+      setCalendar(calRes.data);
       setLastUpdated(new Date());
       setError(null);
     } catch (error: any) {
@@ -283,16 +286,46 @@ export default function App() {
             </div>
           </div>
 
-          {/* Block 5: Network */}
-          <div className="bg-blue-900 rounded-lg p-2 text-white shadow-lg flex flex-col justify-center min-h-0 overflow-hidden">
-            <div className="flex justify-between items-center mb-0.5">
-              <p className="text-[6px] font-black opacity-60 uppercase">Network</p>
+          {/* Block 5: Daily Agenda */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden shadow-sm">
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Daily Agenda</h2>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-2 h-2 text-blue-400" />
+                <span className="text-[5px] font-bold text-slate-400 uppercase tracking-tighter">Helpdesk Shared</span>
+              </div>
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black tracking-tighter leading-none">{sites?.filter(s => s.status === 'online').length || 0}</span>
-              <span className="text-blue-400 text-[8px] font-bold">/ {sites?.length || 0}</span>
+            <div className={cn(
+              "flex-1 overflow-y-auto hide-scrollbar grid gap-x-1 gap-y-0.5 items-start content-start",
+              calendar?.events?.length > 7 ? "grid-cols-3" : 
+              calendar?.events?.length > 3 ? "grid-cols-2" : "grid-cols-1"
+            )}>
+              {calendar?.events?.length > 0 ? (
+                calendar.events.map((event: any, idx: number) => {
+                  const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                  return (
+                    <div key={idx} className="flex gap-1 p-1 rounded bg-blue-50/40 border border-blue-100/30 min-w-0">
+                      <div className="flex flex-col items-center justify-center min-w-[20px] border-r border-blue-100/50 pr-1 shrink-0">
+                        <Clock className="w-1.5 h-1.5 text-blue-400 mb-0.5" />
+                        <span className="text-[5.5px] font-black text-blue-800 leading-none">{startTime}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[6px] font-bold text-slate-800 truncate leading-tight uppercase">{event.subject}</p>
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          <Map className="w-1 h-1 text-slate-400 shrink-0" />
+                          <span className="text-[4.5px] font-bold text-slate-400 uppercase truncate leading-none">{event.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center opacity-30 gap-1 mt-4">
+                  <Calendar className="w-4 h-4 text-slate-300" />
+                  <span className="text-[6px] font-black uppercase text-slate-400">No Events Scheduled</span>
+                </div>
+              )}
             </div>
-            <p className="text-[6px] text-blue-300 font-bold uppercase tracking-widest mt-0.5">Operational</p>
           </div>
         </div>
       </main>
