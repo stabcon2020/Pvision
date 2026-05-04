@@ -230,7 +230,17 @@ export default function App() {
 
           {/* Block 4: Staff Presence (Exchange) */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Out of Office</h2>
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Out of Office</h2>
+              {oooStatus?.lastSync && (
+                <div className="flex items-center gap-1">
+                  {oooStatus.isSyncing && <RefreshCw className="w-2 h-2 text-amber-500 animate-spin" />}
+                  <span className="text-[5px] font-bold text-slate-400 uppercase tracking-tighter">
+                    Synced: {new Date(oooStatus.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-0.5">
               {oooStatus?.users ? (
                 (() => {

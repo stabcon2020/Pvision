@@ -8,12 +8,21 @@ import ping from "ping";
 dotenv.config();
 
 // Video Streams Configuration (HLS .m3u8)
-const STREAMS_CONFIG = [
+const DEFAULT_STREAMS = [
   { name: "Chamber 1", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
   { name: "Chamber 2", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
   { name: "Lobby Entry", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
   { name: "Public Gallery", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
 ];
+
+let STREAMS_CONFIG = DEFAULT_STREAMS;
+try {
+  if (process.env.STREAMS_CONFIG) {
+    STREAMS_CONFIG = JSON.parse(process.env.STREAMS_CONFIG);
+  }
+} catch (e) {
+  console.error("Error parsing STREAMS_CONFIG from .env:", e);
+}
 
 async function startServer() {
   const app = express();
@@ -21,12 +30,20 @@ async function startServer() {
 
   app.use(express.json());
 
-  // CONFIGURATION: Add your 36 gateway names and IP addresses here
-  const SITE_CONFIG = [
+  // Parse SITE_CONFIG from environment or use defaults
+  const DEFAULT_SITES = [
     { name: "Hobart Primary", url: "8.8.8.8", location: "South" },
     { name: "Launceston North", url: "1.1.1.1", location: "North" },
-    // Add additional sites here...
   ];
+
+  let SITE_CONFIG = DEFAULT_SITES;
+  try {
+    if (process.env.SITE_CONFIG) {
+      SITE_CONFIG = JSON.parse(process.env.SITE_CONFIG);
+    }
+  } catch (e) {
+    console.error("Error parsing SITE_CONFIG from .env:", e);
+  }
 
   // Helper to ensure we have a full grid of 36 for the kiosk display
   const getSites = () => {
@@ -249,24 +266,34 @@ async function startServer() {
     }
   });
 
-  // Exchange Online (Microsoft Graph) OOO Status Proxy
-  app.get("/api/exchange/ooo", async (req, res) => {
-    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET } = process.env;
+  // --- Exchange Online Background Sync ---
+  const EXCHANGE_SYNC_INTERVAL = 30000; // 30 seconds
+  let oooCache: any = {
+    users: [],
+    lastSync: null,
+    isSyncing: false,
+    error: null,
+    mock: false
+  };
 
+  async function syncExchange() {
+    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET } = process.env;
     if (!EXCHANGE_TENANT_ID || !EXCHANGE_CLIENT_ID || !EXCHANGE_CLIENT_SECRET) {
-      // Mock data if credentials missing
-      return res.json({
+      oooCache = {
         mock: true,
+        lastSync: new Date().toISOString(),
         users: [
-          { name: "Support Manager", status: "Out of Office", returnDate: "Tomorrow", avatar: "SM" },
-          { name: "Network Lead", status: "Available", returnDate: null, avatar: "NL" },
-          { name: "Field Tech", status: "Out of Office", returnDate: "2026-05-04", avatar: "FT" },
-          { name: "Systems Admin", status: "Available", returnDate: null, avatar: "SA" },
-          { name: "Security Eng", status: "In Meeting", returnDate: null, avatar: "SE" },
+          { name: "Support Manager", status: "Out of Office", avatar: "SM" },
+          { name: "Network Lead", status: "Available", avatar: "NL" },
+          { name: "Field Tech", status: "Out of Office", avatar: "FT" },
+          { name: "Systems Admin", status: "Available", avatar: "SA" },
+          { name: "Security Eng", status: "In Meeting", avatar: "SE" },
         ]
-      });
+      };
+      return;
     }
 
+    oooCache.isSyncing = true;
     try {
       // 1. Get Access Token
       const tokenResponse = await axios.post(
@@ -279,18 +306,16 @@ async function startServer() {
         }).toString(),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
-
       const accessToken = tokenResponse.data.access_token;
 
-      // 2. Fetch Users (limiting to top 20 for performance)
+      // 2. Fetch Users
       const usersResponse = await axios.get(
         "https://graph.microsoft.com/v1.0/users?$top=20&$select=id,displayName,userPrincipalName",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-
       const users = usersResponse.data.value;
 
-      // 3. Batch fetch OOO status for these users (Graph allows up to 20 requests per batch)
+      // 3. Batch Fetch OOO status
       const batchRequests = users.map((user: any, index: number) => ({
         id: index.toString(),
         method: "GET",
@@ -312,27 +337,32 @@ async function startServer() {
         return {
           id: user.id,
           name: user.displayName,
-          upn: user.userPrincipalName,
           status: isOOO ? "Out of Office" : "Available",
           avatar: user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2),
-          details: ooo
         };
       });
 
-      res.json({
+      oooCache = {
         mock: false,
-        users: combinedUsers
-      });
+        users: combinedUsers,
+        lastSync: new Date().toISOString(),
+        isSyncing: false,
+        error: null
+      };
     } catch (error: any) {
-      console.error("Exchange API Error:", error.message);
-      res.status(500).json({ 
-        error: error.message, 
-        mock: true,
-        users: [
-          { name: "Error Syncing", status: "Check Logs", returnDate: null, avatar: "!!" }
-        ]
-      });
+      console.error("Exchange Background Sync Error:", error.message);
+      oooCache.error = error.message;
+      oooCache.isSyncing = false;
     }
+  }
+
+  // Initial sync and set interval
+  syncExchange();
+  setInterval(syncExchange, EXCHANGE_SYNC_INTERVAL);
+
+  // Exchange Online Proxy returns the cache instantly
+  app.get("/api/exchange/ooo", (req, res) => {
+    res.json(oooCache);
   });
 
   app.get("/api/streams", (req, res) => {
