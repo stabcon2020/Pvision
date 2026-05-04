@@ -53,17 +53,23 @@ export function VideoMonitoring({ streams }: { streams: monitoring_stream[] }) {
   return (
     <div className="grid grid-cols-2 gap-1 h-full">
       {streams.map((stream) => (
-        <div key={stream.id} className="relative bg-slate-900 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center min-h-0">
+        <div key={stream.id} className={cn(
+          "relative bg-slate-900 rounded-lg overflow-hidden border flex items-center justify-center min-h-0",
+          stream.status === "online" ? "border-slate-800" : "border-rose-500/50 flash-red shadow-[0_0_15px_rgba(225,29,72,0.1)]"
+        )}>
           {stream.status === "online" ? (
              <HLSPlayer url={stream.url} name={stream.name} />
           ) : (
              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-1 opacity-50 h-full">
-               <VideoOff className="w-4 h-4 text-slate-700" />
-               <span className="text-[6px] font-bold text-slate-600 uppercase tracking-tighter">NO SIGNAL</span>
+               <VideoOff className="w-4 h-4 text-rose-500/50 animate-pulse" />
+               <span className="text-[6px] font-bold text-rose-500/70 uppercase tracking-tighter">NO SIGNAL</span>
                <div className="absolute bottom-1 left-1 right-1">
                  <p className="text-[8px] font-bold text-slate-500 truncate uppercase tracking-tighter leading-none">{stream.name}</p>
                </div>
              </div>
+          )}
+          {stream.status === "online" && (
+            <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] z-10" />
           )}
         </div>
       ))}

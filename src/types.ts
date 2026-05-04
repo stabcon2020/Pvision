@@ -39,3 +39,11 @@ export interface AgentPerformance {
   open: number;
   avatar: string;
 }
+
+export interface WatchdogService {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  status: "online" | "offline";
+}

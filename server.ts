@@ -4,8 +4,57 @@ import path from "path";
 import axios from "axios";
 import dotenv from "dotenv";
 import ping from "ping";
+import net from "net";
 
 dotenv.config();
+
+// Watchdog Configuration
+const DEFAULT_WATCHDOG_SERVICES = [
+  { name: "DHCP Server", host: "172.18.166.1", port: 67 },
+  { name: "Active Directory", host: "172.18.167.1", port: 389 },
+  { name: "Proxy Gateway", host: "172.18.173.1", port: 8080 },
+  { name: "Print Server", host: "172.18.167.241", port: 9100 },
+  { name: "File Share", host: "172.18.166.241", port: 445 },
+  { name: "App DB", host: "172.18.166.97", port: 1433 },
+];
+
+let WATCHDOG_CONFIG = DEFAULT_WATCHDOG_SERVICES;
+try {
+  if (process.env.WATCHDOG_CONFIG) {
+    WATCHDOG_CONFIG = JSON.parse(process.env.WATCHDOG_CONFIG);
+  }
+} catch (e) {
+  console.error("Error parsing WATCHDOG_CONFIG from .env:", e);
+}
+
+// TCP Port Checker Function
+function checkService(host: string, port: number, timeoutMs = 2000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    let status = false;
+
+    socket.setTimeout(timeoutMs);
+
+    socket.on('connect', () => {
+      status = true;
+      socket.destroy();
+    });
+
+    socket.on('timeout', () => {
+      socket.destroy();
+    });
+
+    socket.on('error', () => {
+      socket.destroy();
+    });
+
+    socket.on('close', () => {
+      resolve(status);
+    });
+
+    socket.connect(port, host);
+  });
+}
 
 // Video Streams Configuration (HLS .m3u8)
 const DEFAULT_STREAMS = [
@@ -331,10 +380,10 @@ async function startServer() {
         mock: true,
         lastSync: new Date().toISOString(),
         events: [
-          { subject: "Weekly Team Sync", start: "2026-05-04T09:00:00", end: "2026-05-04T10:00:00", location: "Teams" },
-          { subject: "Network Maintenance", start: "2026-05-04T11:00:00", end: "2026-05-04T13:00:00", location: "Datacenter" },
-          { subject: "Staff Lunch", start: "2026-05-04T13:00:00", end: "2026-05-04T14:00:00", location: "Breakroom" },
-          { subject: "Security Patching", start: "2026-05-04T15:00:00", end: "2026-05-04T17:00:00", location: "Remote" },
+          { subject: "Weekly Team Sync", start: "2026-05-04T09:00:00", end: "2026-05-04T10:00:00", location: "Teams", isAllDay: false },
+          { subject: "Network Maintenance", start: "2026-05-04T11:00:00", end: "2026-05-04T13:00:00", location: "Datacenter", isAllDay: false },
+          { subject: "Staff Lunch", start: "2026-05-04T13:00:00", end: "2026-05-04T14:00:00", location: "Breakroom", isAllDay: false },
+          { subject: "Security Patching", start: "2026-05-04T15:00:00", end: "2026-05-04T17:00:00", location: "Remote", isAllDay: false },
         ]
       };
       return;
@@ -367,7 +416,7 @@ async function startServer() {
           const endOfDay = new Date(hobartNow.getFullYear(), hobartNow.getMonth(), hobartNow.getDate(), 23, 59, 59).toISOString();
           
           const calendarResponse = await axios.get(
-            `https://graph.microsoft.com/v1.0/users/${HELPDESK_CALENDAR_EMAIL}/calendarView?startDateTime=${startOfDay}&endDateTime=${endOfDay}&$select=subject,start,end,location&$orderby=start/dateTime`,
+            `https://graph.microsoft.com/v1.0/users/${HELPDESK_CALENDAR_EMAIL}/calendarView?startDateTime=${startOfDay}&endDateTime=${endOfDay}&$select=subject,start,end,location,isAllDay&$orderby=start/dateTime`,
             { headers: { Authorization: `Bearer ${accessToken}` } }
           );
           
@@ -377,7 +426,8 @@ async function startServer() {
               subject: ev.subject,
               start: ev.start.dateTime,
               end: ev.end.dateTime,
-              location: ev.location?.displayName || "N/A"
+              location: ev.location?.displayName || "N/A",
+              isAllDay: ev.isAllDay || false
             })),
             lastSync: new Date().toISOString(),
             isSyncing: false,
@@ -487,6 +537,33 @@ async function startServer() {
       ...s,
       status: Math.random() > 0.1 ? "online" : "offline"
     })));
+  });
+
+  app.get("/api/watchdog", async (req, res) => {
+    const services = await Promise.all(
+      WATCHDOG_CONFIG.map(async (service, i) => {
+        let status = false;
+        try {
+          if (service.port) {
+            status = await checkService(service.host, service.port, 2000);
+          } else {
+             const result = await ping.promise.probe(service.host, {
+              timeout: 2,
+              extra: ["-c", "1"]
+            });
+            status = result.alive;
+          }
+        } catch (e) {
+          status = false;
+        }
+        return {
+          id: `wd-${i}`,
+          ...service,
+          status: status ? "online" : "offline"
+        };
+      })
+    );
+    res.json(services);
   });
   
   // Vite middleware for development
