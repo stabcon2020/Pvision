@@ -262,10 +262,12 @@ export default function App() {
                   }
                   return oooWithDate.map((user: any, idx: number) => {
                     const rDate = new Date(user.returnDate);
-                    const isToday = rDate.toDateString() === new Date().toDateString();
+                    const nowHobart = new Date(new Date().toLocaleString("en-US", {timeZone: "Australia/Hobart"}));
+                    const isToday = rDate.toDateString() === nowHobart.toDateString();
+                    
                     const dateStr = isToday 
-                      ? `Today @ ${rDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                      : rDate.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                      ? `Today @ ${rDate.toLocaleTimeString("en-AU", { hour: '2-digit', minute: '2-digit', timeZone: 'Australia/Hobart' })}`
+                      : rDate.toLocaleDateString("en-AU", { day: 'numeric', month: 'short', timeZone: 'Australia/Hobart' });
                     
                     return (
                       <div key={idx} className="flex flex-col px-1 py-0.5 rounded bg-amber-50/70 border border-amber-100/50 min-w-0">
@@ -302,7 +304,12 @@ export default function App() {
             )}>
               {calendar?.events?.length > 0 ? (
                 calendar.events.map((event: any, idx: number) => {
-                  const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                  const startTime = new Date(event.start).toLocaleTimeString("en-AU", { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    hour12: false,
+                    timeZone: 'Australia/Hobart'
+                  });
                   return (
                     <div key={idx} className="flex gap-1 p-1 rounded bg-blue-50/40 border border-blue-100/30 min-w-0">
                       <div className="flex flex-col items-center justify-center min-w-[20px] border-r border-blue-100/50 pr-1 shrink-0">

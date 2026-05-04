@@ -359,9 +359,12 @@ async function startServer() {
       // 2. Fetch Calendar Events (If email provided)
       if (HELPDESK_CALENDAR_EMAIL) {
         try {
-          const now = new Date();
-          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-          const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+          // Calculate Hobart "Today"
+          const hobartStr = new Date().toLocaleString("en-US", {timeZone: "Australia/Hobart"});
+          const hobartNow = new Date(hobartStr);
+          
+          const startOfDay = new Date(hobartNow.getFullYear(), hobartNow.getMonth(), hobartNow.getDate(), 0, 0, 0).toISOString();
+          const endOfDay = new Date(hobartNow.getFullYear(), hobartNow.getMonth(), hobartNow.getDate(), 23, 59, 59).toISOString();
           
           const calendarResponse = await axios.get(
             `https://graph.microsoft.com/v1.0/users/${HELPDESK_CALENDAR_EMAIL}/calendarView?startDateTime=${startOfDay}&endDateTime=${endOfDay}&$select=subject,start,end,location&$orderby=start/dateTime`,
