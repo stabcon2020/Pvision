@@ -267,7 +267,7 @@ async function startServer() {
   });
 
   // --- Exchange Online Background Sync ---
-  const EXCHANGE_SYNC_INTERVAL = 30000; // 30 seconds
+  const EXCHANGE_SYNC_INTERVAL = 120000; // 2 minutes (increased for 600 users)
   let oooCache: any = {
     users: [],
     lastSync: null,
@@ -310,9 +310,9 @@ async function startServer() {
       );
       const accessToken = tokenResponse.data.access_token;
 
-      // 2. Fetch Users (Increasing limit to 100)
+      // 2. Fetch Users (Increasing limit to 600)
       const usersResponse = await axios.get(
-        "https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,userPrincipalName",
+        "https://graph.microsoft.com/v1.0/users?$top=600&$select=id,displayName,userPrincipalName",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const users = usersResponse.data.value;
@@ -325,7 +325,7 @@ async function startServer() {
       }
 
       for (const chunk of chunks) {
-        const batchRequests = chunk.map((user: any, index: number) => ({
+        const batchRequests = chunk.map((user: any) => ({
           id: user.id, // Use user ID as batch ID for direct mapping
           method: "GET",
           url: `/users/${user.id}/mailboxSettings/automaticRepliesSetting`
