@@ -51,9 +51,9 @@ function HLSPlayer({ url, name }: { url: string; name: string }) {
 
 export function VideoMonitoring({ streams }: { streams: monitoring_stream[] }) {
   return (
-    <div className="grid grid-cols-2 gap-1 h-[100px]">
+    <div className="grid grid-cols-2 gap-1 h-full">
       {streams.map((stream) => (
-        <div key={stream.id} className="relative bg-slate-900 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center h-full">
+        <div key={stream.id} className="relative bg-slate-900 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center min-h-0">
           {stream.status === "online" ? (
              <HLSPlayer url={stream.url} name={stream.name} />
           ) : (

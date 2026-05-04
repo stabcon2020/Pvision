@@ -200,7 +200,7 @@ export default function App() {
         </div>
 
         {/* Global Footer Grid - Always 5 Columns Side-by-Side */}
-        <div className="grid grid-cols-5 gap-1 h-[140px] shrink-0 min-h-0">
+        <div className="grid grid-cols-5 gap-1 h-[180px] shrink-0 min-h-0">
           {/* Block 1: Video Streams */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Stream</h2>
@@ -241,13 +241,17 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-x-1 gap-y-0.5 items-start">
+            <div className={cn(
+              "flex-1 overflow-y-auto hide-scrollbar grid gap-x-1 gap-y-0.5 items-start content-start",
+              oooStatus?.users?.filter((u: any) => u.status === "Out of Office" && u.returnDate).length > 20 ? "grid-cols-4" : 
+              oooStatus?.users?.filter((u: any) => u.status === "Out of Office" && u.returnDate).length > 8 ? "grid-cols-3" : "grid-cols-2"
+            )}>
               {oooStatus?.users ? (
                 (() => {
                   const oooWithDate = oooStatus.users.filter((u: any) => u.status === "Out of Office" && u.returnDate);
                   if (oooWithDate.length === 0) {
                     return (
-                      <div className="col-span-2 flex-1 flex flex-col items-center justify-center gap-1 opacity-40 py-4">
+                      <div className="col-span-full flex-1 flex flex-col items-center justify-center gap-1 opacity-40 py-4">
                         <CheckCircle className="w-4 h-4 text-emerald-500" />
                         <span className="text-[6px] font-black uppercase text-slate-400">No Scheduled OOO</span>
                       </div>
@@ -255,22 +259,26 @@ export default function App() {
                   }
                   return oooWithDate.map((user: any, idx: number) => {
                     const rDate = new Date(user.returnDate);
-                    const dateStr = rDate.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                    const isToday = rDate.toDateString() === new Date().toDateString();
+                    const dateStr = isToday 
+                      ? `Today @ ${rDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      : rDate.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                    
                     return (
                       <div key={idx} className="flex flex-col px-1 py-0.5 rounded bg-amber-50/70 border border-amber-100/50 min-w-0">
                         <div className="flex items-center gap-1 min-w-0">
                           <div className="w-1 h-1 rounded-full bg-amber-500 shrink-0 animate-pulse" />
-                          <span className="text-[6px] font-bold text-amber-900 truncate leading-tight">{user.name}</span>
+                          <span className="text-[6px] font-bold text-amber-900 truncate leading-tight uppercase">{user.name}</span>
                         </div>
-                        <span className="text-[5.5px] font-black text-amber-600 uppercase tracking-tighter mt-0.5 ml-2">
-                          Return: {dateStr}
+                        <span className="text-[5px] font-black text-amber-600 uppercase tracking-tighter mt-0.5 ml-1.5 opacity-80">
+                          Till: {dateStr}
                         </span>
                       </div>
                     );
                   });
                 })()
               ) : (
-                <div className="col-span-2 flex-1 flex items-center justify-center text-[7px] text-slate-400 font-bold uppercase italic py-4">Syncing...</div>
+                <div className="col-span-full flex-1 flex items-center justify-center text-[7px] text-slate-400 font-bold uppercase italic py-4">Syncing...</div>
               )}
             </div>
           </div>

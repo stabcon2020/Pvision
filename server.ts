@@ -9,10 +9,10 @@ dotenv.config();
 
 // Video Streams Configuration (HLS .m3u8)
 const DEFAULT_STREAMS = [
-  { name: "Chamber 1", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-  { name: "Chamber 2", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-  { name: "Lobby Entry", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
-  { name: "Public Gallery", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+  { name: "House of Assembly", url: "https://5ea8aa5cf299b.streamlock.net/HA/house_source/playlist.m3u8" },
+  { name: "Legislative Council", url: "https://5ea8aa5cf299b.streamlock.net/LC/legco_source/playlist.m3u8" },
+  { name: "Committee Room 1", url: "https://5ea8aa5cf299b.streamlock.net/HACOM/hacom/playlist.m3u8" },
+  { name: "Committee Room 2", url: "https://5ea8aa5cf299b.streamlock.net/LCCOM/lccom/playlist.m3u8" },
 ];
 
 let STREAMS_CONFIG = DEFAULT_STREAMS;
@@ -343,17 +343,33 @@ async function startServer() {
         }
       }
 
+      const now = new Date();
       const combinedUsers = users.map((user: any) => {
         const batchItem = allResults.find((r: any) => r.id === user.id);
         // Only return OOO if the response was successful and status is enabled
         const ooo = batchItem?.status === 200 ? batchItem.body : {};
-        const isOOO = ooo.status === "alwaysEnabled" || ooo.status === "scheduled";
+        
+        let isOOO = false;
+        let returnDate = null;
+
+        if (ooo.status === "alwaysEnabled") {
+          isOOO = true;
+          returnDate = ooo.scheduledEndDateTime?.dateTime || null;
+        } else if (ooo.status === "scheduled") {
+          const start = new Date(ooo.scheduledStartDateTime?.dateTime);
+          const end = new Date(ooo.scheduledEndDateTime?.dateTime);
+          // Current OOO if we are within the window
+          if (now >= start && now <= end) {
+            isOOO = true;
+            returnDate = ooo.scheduledEndDateTime?.dateTime;
+          }
+        }
         
         return {
           id: user.id,
           name: user.displayName,
           status: isOOO ? "Out of Office" : "Available",
-          returnDate: ooo.scheduledEndDateTime?.dateTime || null,
+          returnDate: returnDate,
           avatar: user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2),
         };
       });
