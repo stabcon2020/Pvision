@@ -199,8 +199,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Global Footer Grid - Always 4 Columns Side-by-Side */}
-        <div className="grid grid-cols-4 gap-1 h-[140px] shrink-0 min-h-0">
+        {/* Global Footer Grid - Always 5 Columns Side-by-Side */}
+        <div className="grid grid-cols-5 gap-1 h-[140px] shrink-0 min-h-0">
           {/* Block 1: Video Streams */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Stream</h2>
@@ -220,41 +220,44 @@ export default function App() {
             </div>
           </div>
 
-          {/* Block 3: Service Desk & Staff Presence */}
+          {/* Block 3: Service Desk (Freshservice) */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Service Desk</h2>
-              {oooStatus?.users && (
-                <span className="text-[6px] font-bold text-amber-600 uppercase tracking-widest leading-none bg-amber-50 px-1 py-0.5 rounded border border-amber-100/50">Staff Status Feed</span>
-              )}
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Service Desk</h2>
+            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-0.5">
+              <AgentPerformanceList agents={analytics?.agents} />
             </div>
-            <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-1">
-              <div className="bg-white/30 rounded p-0.5">
-                <AgentPerformanceList agents={analytics?.agents} />
-              </div>
-              
-              {oooStatus?.users && (
-                <div className="border-t border-blue-100/30 pt-1 mt-0.5">
-                  <div className="flex flex-col gap-0.5">
-                    {oooStatus.users.map((user: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-1.5 px-1 py-0.5 bg-white/20 rounded-md">
-                        <div className={cn(
-                          "w-1 h-1 rounded-full",
-                          user.status === "Available" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
-                        )} />
-                        <span className="text-[7px] font-bold text-slate-600 truncate flex-1">{user.name}</span>
-                        <span className={cn(
-                          "text-[6px] font-black uppercase tracking-tighter px-1 rounded-[2px]",
-                          user.status === "Available" ? "text-emerald-600 bg-emerald-50/50" : "text-amber-600 bg-amber-50/50"
-                        )}>{user.status}</span>
+          </div>
+
+          {/* Block 4: Staff Presence (Exchange) */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Out of Office</h2>
+            <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-0.5">
+              {oooStatus?.users ? (
+                (() => {
+                  const oooOnly = oooStatus.users.filter((u: any) => u.status === "Out of Office");
+                  if (oooOnly.length === 0) {
+                    return (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        <span className="text-[6px] font-black uppercase text-slate-400">All Staff Present</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    );
+                  }
+                  return oooOnly.map((user: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-1.5 px-1 py-0.5 rounded bg-amber-50/70 border border-amber-100/50">
+                      <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                      <span className="text-[6.5px] font-bold text-amber-900 truncate flex-1">{user.name}</span>
+                      <span className="text-[5.5px] font-black uppercase tracking-tighter px-0.5 rounded-[1px] text-amber-600">OOO</span>
+                    </div>
+                  ));
+                })()
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-[7px] text-slate-400 font-bold uppercase italic">Syncing...</div>
               )}
             </div>
           </div>
 
+          {/* Block 5: Network */}
           <div className="bg-blue-900 rounded-lg p-2 text-white shadow-lg flex flex-col justify-center min-h-0 overflow-hidden">
             <div className="flex justify-between items-center mb-0.5">
               <p className="text-[6px] font-black opacity-60 uppercase">Network</p>

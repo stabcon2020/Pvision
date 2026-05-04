@@ -251,7 +251,7 @@ async function startServer() {
 
   // Exchange Online (Microsoft Graph) OOO Status Proxy
   app.get("/api/exchange/ooo", async (req, res) => {
-    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET, EXCHANGE_USER_PRINCIPAL_NAME } = process.env;
+    const { EXCHANGE_TENANT_ID, EXCHANGE_CLIENT_ID, EXCHANGE_CLIENT_SECRET } = process.env;
 
     if (!EXCHANGE_TENANT_ID || !EXCHANGE_CLIENT_ID || !EXCHANGE_CLIENT_SECRET) {
       // Mock data if credentials missing
@@ -260,7 +260,9 @@ async function startServer() {
         users: [
           { name: "Support Manager", status: "Out of Office", returnDate: "Tomorrow", avatar: "SM" },
           { name: "Network Lead", status: "Available", returnDate: null, avatar: "NL" },
-          { name: "Field Tech", status: "On Site", returnDate: "16:00", avatar: "FT" },
+          { name: "Field Tech", status: "Out of Office", returnDate: "2026-05-04", avatar: "FT" },
+          { name: "Systems Admin", status: "Available", returnDate: null, avatar: "SA" },
+          { name: "Security Eng", status: "In Meeting", returnDate: null, avatar: "SE" },
         ]
       });
     }
@@ -280,23 +282,56 @@ async function startServer() {
 
       const accessToken = tokenResponse.data.access_token;
 
-      // 2. Fetch OOO status for the configured user or a set of users
-      // This is a simplified example fetching mailbox settings for one user
-      const upn = EXCHANGE_USER_PRINCIPAL_NAME || "user@domain.com";
-      const graphResponse = await axios.get(
-        `https://graph.microsoft.com/v1.0/users/${upn}/mailboxSettings/automaticRepliesSetting`,
+      // 2. Fetch Users (limiting to top 20 for performance)
+      const usersResponse = await axios.get(
+        "https://graph.microsoft.com/v1.0/users?$top=20&$select=id,displayName,userPrincipalName",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
-      const ooo = graphResponse.data;
+      const users = usersResponse.data.value;
+
+      // 3. Batch fetch OOO status for these users (Graph allows up to 20 requests per batch)
+      const batchRequests = users.map((user: any, index: number) => ({
+        id: index.toString(),
+        method: "GET",
+        url: `/users/${user.id}/mailboxSettings/automaticRepliesSetting`
+      }));
+
+      const batchResponse = await axios.post(
+        "https://graph.microsoft.com/v1.0/$batch",
+        { requests: batchRequests },
+        { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
+      );
+
+      const results = batchResponse.data.responses;
+      const combinedUsers = users.map((user: any, index: number) => {
+        const batchItem = results.find((r: any) => r.id === index.toString());
+        const ooo = batchItem?.body || {};
+        const isOOO = ooo.status === "alwaysEnabled" || ooo.status === "scheduled";
+        
+        return {
+          id: user.id,
+          name: user.displayName,
+          upn: user.userPrincipalName,
+          status: isOOO ? "Out of Office" : "Available",
+          avatar: user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2),
+          details: ooo
+        };
+      });
+
       res.json({
         mock: false,
-        status: ooo.status === "alwaysEnabled" || ooo.status === "scheduled" ? "Out of Office" : "Available",
-        details: ooo
+        users: combinedUsers
       });
     } catch (error: any) {
       console.error("Exchange API Error:", error.message);
-      res.status(500).json({ error: error.message, mock: true });
+      res.status(500).json({ 
+        error: error.message, 
+        mock: true,
+        users: [
+          { name: "Error Syncing", status: "Check Logs", returnDate: null, avatar: "!!" }
+        ]
+      });
     }
   });
 
