@@ -287,7 +287,9 @@ async function startServer() {
           { name: "Network Lead", status: "Available", avatar: "NL" },
           { name: "Field Tech", status: "Out of Office", avatar: "FT" },
           { name: "Systems Admin", status: "Available", avatar: "SA" },
-          { name: "Security Eng", status: "In Meeting", avatar: "SE" },
+          { name: "Security Eng", status: "Out of Office", avatar: "SE" },
+          { name: "Project Lead", status: "Out of Office", avatar: "PL" },
+          { name: "Helpdesk Tier 2", status: "Available", avatar: "H2" },
         ]
       };
       return;
@@ -308,30 +310,43 @@ async function startServer() {
       );
       const accessToken = tokenResponse.data.access_token;
 
-      // 2. Fetch Users
+      // 2. Fetch Users (Increasing limit to 100)
       const usersResponse = await axios.get(
-        "https://graph.microsoft.com/v1.0/users?$top=20&$select=id,displayName,userPrincipalName",
+        "https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,userPrincipalName",
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const users = usersResponse.data.value;
 
-      // 3. Batch Fetch OOO status
-      const batchRequests = users.map((user: any, index: number) => ({
-        id: index.toString(),
-        method: "GET",
-        url: `/users/${user.id}/mailboxSettings/automaticRepliesSetting`
-      }));
+      // 3. Batch Fetch OOO status in chunks of 20 (Graph limit)
+      const allResults: any[] = [];
+      const chunks = [];
+      for (let i = 0; i < users.length; i += 20) {
+        chunks.push(users.slice(i, i + 20));
+      }
 
-      const batchResponse = await axios.post(
-        "https://graph.microsoft.com/v1.0/$batch",
-        { requests: batchRequests },
-        { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
-      );
+      for (const chunk of chunks) {
+        const batchRequests = chunk.map((user: any, index: number) => ({
+          id: user.id, // Use user ID as batch ID for direct mapping
+          method: "GET",
+          url: `/users/${user.id}/mailboxSettings/automaticRepliesSetting`
+        }));
 
-      const results = batchResponse.data.responses;
-      const combinedUsers = users.map((user: any, index: number) => {
-        const batchItem = results.find((r: any) => r.id === index.toString());
-        const ooo = batchItem?.body || {};
+        try {
+          const batchResponse = await axios.post(
+            "https://graph.microsoft.com/v1.0/$batch",
+            { requests: batchRequests },
+            { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
+          );
+          allResults.push(...batchResponse.data.responses);
+        } catch (batchErr: any) {
+          console.error("Batch Request Chunk Error:", batchErr.message);
+        }
+      }
+
+      const combinedUsers = users.map((user: any) => {
+        const batchItem = allResults.find((r: any) => r.id === user.id);
+        // Only return OOO if the response was successful and status is enabled
+        const ooo = batchItem?.status === 200 ? batchItem.body : {};
         const isOOO = ooo.status === "alwaysEnabled" || ooo.status === "scheduled";
         
         return {
