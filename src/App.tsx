@@ -9,10 +9,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area 
 } from "recharts";
+import { motion } from "motion/react";
 import { 
   LayoutDashboard, Server, Ticket, CheckCircle, AlertCircle, Timer,
   RefreshCw, Settings, Search, Bell, Map, Share2, Activity, Globe, Building2,
-  Cloud, Sun, CloudRain, Wind, Thermometer, Calendar, Clock
+  Cloud, Sun, CloudRain, Wind, Thermometer, Calendar, Clock,
+  CloudLightning, CloudFog, CloudSun, CloudMoon, Moon
 } from "lucide-react";
 import { Site, FreshserviceAnalytics, monitoring_stream, WatchdogService } from "./types";
 import { SiteStatusGrid, AnalyticsCard, AgentPerformanceList, VideoMonitoring } from "./components/Dashboard";
@@ -32,6 +34,7 @@ interface WeatherData {
   wind_dir: string;
   local_date_time: string;
   name: string;
+  weather?: string;
 }
 
 export default function App() {
@@ -42,6 +45,7 @@ export default function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [oooStatus, setOooStatus] = useState<any>(null);
   const [calendar, setCalendar] = useState<any>(null);
+  const [politas, setPolitas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -50,14 +54,15 @@ export default function App() {
   const fetchData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const [sitesRes, analyticsRes, streamsRes, watchdogRes, weatherRes, oooRes, calRes] = await Promise.all([
+      const [sitesRes, analyticsRes, streamsRes, watchdogRes, weatherRes, oooRes, calRes, politasRes] = await Promise.all([
         axios.get("/api/sites"),
         axios.get("/api/freshservice/analytics"),
         axios.get("/api/streams"),
         axios.get("/api/watchdog"),
         axios.get("/api/weather"),
         axios.get("/api/exchange/ooo"),
-        axios.get("/api/exchange/calendar")
+        axios.get("/api/exchange/calendar"),
+        axios.get("/api/politas")
       ]);
       setSites(sitesRes.data);
       setAnalytics(analyticsRes.data);
@@ -66,6 +71,7 @@ export default function App() {
       setWeather(weatherRes.data);
       setOooStatus(oooRes.data);
       setCalendar(calRes.data);
+      setPolitas(politasRes.data);
       setLastUpdated(new Date());
       setError(null);
     } catch (err: any) {
@@ -156,7 +162,18 @@ export default function App() {
                 </div>
               </div>
               <div className="text-blue-500">
-                {weather.temp > 20 ? <Sun className="w-4 h-4 fill-current opacity-70" /> : <Cloud className="w-4 h-4 fill-current opacity-70" />}
+                {(() => {
+                  const condition = (weather.weather || "").toLowerCase();
+                  if (condition.includes("rain") || condition.includes("shower")) return <CloudRain className="w-4 h-4 fill-current opacity-70" />;
+                  if (condition.includes("storm") || condition.includes("thunder")) return <CloudLightning className="w-4 h-4 fill-current opacity-70" />;
+                  if (condition.includes("fog") || condition.includes("mist")) return <CloudFog className="w-4 h-4 fill-current opacity-70" />;
+                  if (condition.includes("partly") || condition.includes("mostly")) return <CloudSun className="w-4 h-4 fill-current opacity-70" />;
+                  if (condition.includes("cloud")) return <Cloud className="w-4 h-4 fill-current opacity-70" />;
+                  if (condition.includes("fine") || condition.includes("clear") || condition.includes("sunny")) return <Sun className="w-4 h-4 fill-current opacity-70" />;
+                  
+                  // Fallback based on typical BOM observation names or temp
+                  return weather.temp > 22 ? <Sun className="w-4 h-4 fill-current opacity-70" /> : <Cloud className="w-4 h-4 fill-current opacity-70" />;
+                })()}
               </div>
             </div>
           )}
@@ -185,7 +202,7 @@ export default function App() {
         {/* Connectivity Matrix - Scalable Middle Section */}
         <div className="flex-1 min-h-0 flex flex-col gap-1">
           <div className="flex justify-between items-center px-1">
-            <h2 className="text-[8px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Connectivity Matrix</h2>
+            <h2 className="text-[8px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Electorate Office Gateways</h2>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <div className="w-1 h-1 rounded-full bg-emerald-500" />
@@ -206,7 +223,7 @@ export default function App() {
         <div className="grid grid-cols-3 grid-rows-2 gap-1.5 h-[320px] shrink-0 min-h-0">
           {/* Row 1 */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">AV FEED</h2>
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">WEB STREAM</h2>
             <div className="flex-1 min-h-0 rounded overflow-hidden">
               <VideoMonitoring streams={streams} />
             </div>
@@ -222,7 +239,7 @@ export default function App() {
           </div>
 
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">TEAM STATUS</h2>
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">TICKET LEADERBOARD</h2>
             <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-1">
               <AgentPerformanceList agents={analytics?.agents} />
             </div>
@@ -230,18 +247,23 @@ export default function App() {
 
           {/* Row 2 */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
-             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">ABSENCE</h2>
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">OUT OF OFFICE</h2>
              <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5 content-start">
                {oooStatus?.users?.filter((u: any) => u.status === "Out of Office").slice(0, 8).map((user: any, idx: number) => (
-                 <div key={idx} className="bg-amber-50/50 border border-amber-100 p-1 rounded text-[6px] font-bold text-amber-900 truncate uppercase">
-                   {user.name}
+                 <div key={idx} className="bg-amber-50/50 border border-amber-100 p-1 rounded text-[6px] font-bold text-amber-900 flex justify-between items-center gap-1 uppercase">
+                   <span className="truncate">{user.name}</span>
+                   {user.returnDate && (
+                     <span className="text-[4.5px] opacity-60 whitespace-nowrap">
+                       RET: {new Date(user.returnDate).toLocaleDateString([], { day: '2-digit', month: '2-digit' })}
+                     </span>
+                   )}
                  </div>
                ))}
              </div>
           </div>
 
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
-             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">AGENDA</h2>
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">WHAT'S ON TODAY</h2>
              <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-1 p-0.5">
                {calendar?.events?.slice(0, 4).map((event: any, idx: number) => (
                  <div key={idx} className="bg-blue-50/50 border border-blue-100 p-1 rounded text-[6px] font-bold text-blue-900 truncate uppercase">
@@ -296,6 +318,51 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      {/* #POLITAS Twitter-style Ticker */}
+      <div className="h-6 bg-black border-t border-white/10 flex items-center overflow-hidden shrink-0 relative">
+        <div className="absolute left-0 top-0 bottom-0 px-2 bg-black text-white flex items-center gap-1.5 z-10 shadow-[4px_0_10px_rgba(0,0,0,0.5)] border-r border-white/10">
+          <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-current" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+          <span className="text-[7px] font-black tracking-widest">#POLITAS</span>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <motion.div 
+            className="flex items-center gap-16 whitespace-nowrap pl-[100px]"
+            animate={{ x: ["0%", "-100%"] }}
+            transition={{ 
+              duration: 120, // Faster scroll but still readable
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          >
+            {[...politas, ...politas].length > 0 ? (
+              [...politas, ...politas].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-[7px] font-black text-white">
+                    {item.author}
+                  </span>
+                  <span className="text-[6px] font-medium text-gray-500">
+                    {item.handle}
+                  </span>
+                  <span className="text-[7px] font-medium text-gray-100">
+                    {item.title}
+                  </span>
+                  <span className="text-[5.5px] font-bold text-blue-400 opacity-80">
+                    {item.pubDate ? new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span className="text-[7px] font-bold text-gray-500 uppercase tracking-wide">
+                CONNECTING TO X.COM REAL-TIME FEED... FETCHING #POLITAS DATA...
+              </span>
+            )}
+          </motion.div>
+        </div>
+        <div className="absolute right-0 top-0 bottom-0 px-2 bg-black border-l border-white/10 text-[5px] font-black text-gray-400 flex items-center z-10 italic uppercase">
+          Live Updates
+        </div>
+      </div>
     </div>
   );
 }
