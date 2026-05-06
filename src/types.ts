@@ -43,7 +43,8 @@ export interface AgentPerformance {
 export interface WatchdogService {
   id: string;
   name: string;
-  host: string;
-  port: number;
+  host?: string;
+  port?: number;
   status: "online" | "offline";
+  lastUpdate?: string;
 }

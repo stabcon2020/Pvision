@@ -9,14 +9,7 @@ import net from "net";
 dotenv.config();
 
 // Watchdog Configuration
-const DEFAULT_WATCHDOG_SERVICES = [
-  { name: "DHCP Server", host: "172.18.166.1", port: 67 },
-  { name: "Active Directory", host: "172.18.167.1", port: 389 },
-  { name: "Proxy Gateway", host: "172.18.173.1", port: 8080 },
-  { name: "Print Server", host: "172.18.167.241", port: 9100 },
-  { name: "File Share", host: "172.18.166.241", port: 445 },
-  { name: "App DB", host: "172.18.166.97", port: 1433 },
-];
+const DEFAULT_WATCHDOG_SERVICES: any[] = [];
 
 let WATCHDOG_CONFIG = DEFAULT_WATCHDOG_SERVICES;
 try {

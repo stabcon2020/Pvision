@@ -254,28 +254,44 @@ export default function App() {
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">WATCHDOG</h2>
              <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5 content-start">
-               {watchdogs?.map((service, idx) => (
-                 <div 
-                   key={idx} 
-                   className={cn(
-                     "flex items-center gap-1 p-1 rounded border transition-colors",
-                     service.status === 'online' 
-                       ? "bg-emerald-50 border-emerald-100" 
-                       : "bg-rose-50 border-rose-100"
-                   )}
-                 >
-                    <div className={cn(
-                      "w-1 h-1 rounded-full",
-                      service.status === 'online' ? "bg-emerald-500" : "bg-rose-500 animate-pulse"
-                    )} />
-                    <span className={cn(
-                      "text-[5px] font-black truncate uppercase",
-                      service.status === 'online' ? "text-emerald-900" : "text-rose-900"
-                    )}>
-                      {service.name}
-                    </span>
-                 </div>
-               ))}
+               {watchdogs?.map((service, idx) => {
+                 const isStale = service.lastUpdate 
+                   ? (new Date().getTime() - new Date(service.lastUpdate).getTime()) > 5 * 60 * 1000 
+                   : false;
+                 
+                 return (
+                   <div 
+                     key={idx} 
+                     className={cn(
+                       "flex items-center gap-1 p-1 rounded border transition-colors",
+                       isStale 
+                         ? "bg-orange-50 border-orange-200 animate-pulse" 
+                         : service.status === 'online' 
+                           ? "bg-emerald-50 border-emerald-100" 
+                           : "bg-rose-50 border-rose-100"
+                     )}
+                   >
+                      <div className={cn(
+                        "w-1 h-1 rounded-full",
+                        isStale 
+                          ? "bg-orange-500" 
+                          : service.status === 'online' 
+                            ? "bg-emerald-500" 
+                            : "bg-rose-500 animate-pulse"
+                      )} />
+                      <span className={cn(
+                        "text-[5px] font-black truncate uppercase",
+                        isStale 
+                          ? "text-orange-900" 
+                          : service.status === 'online' 
+                            ? "text-emerald-900" 
+                            : "text-rose-900"
+                      )}>
+                        {service.name}
+                      </span>
+                   </div>
+                 );
+               })}
              </div>
           </div>
         </div>
