@@ -566,47 +566,152 @@ async function startServer() {
     res.json(services);
   });
 
-  app.get("/api/hyperv/clusters", (req, res) => {
-    const generateVMs = (count: number, prefix: string) => {
-      return Array.from({ length: count }).map((_, i) => ({
-        id: `vm-${prefix}-${i}`,
-        name: `${prefix}-VM-${String(i + 1).padStart(2, '0')}`,
-        status: Math.random() > 0.1 ? "running" : Math.random() > 0.5 ? "stopped" : "paused",
-        cpuUsage: Math.floor(Math.random() * 20),
-        memoryMB: Math.random() > 0.5 ? 4096 : 8192
-      }));
-    };
+  let hyperVClustersStore: any[] = [];
+  let pullConfig = {
+    enabled: false,
+    host: "",
+    username: "",
+    password: "",
+    interval: 60000 // 1 minute
+  };
 
-    const clusters = [
-      {
-        id: "cluster-1",
-        name: "PARL-HYPERV-CL01",
-        nodes: [
-          { id: "node-1-1", name: "HV-NODE-01", status: "online", cpuUsage: 12, memoryUsage: 65, vmCount: 12, vms: generateVMs(12, "CL1-N1") },
-          { id: "node-1-2", name: "HV-NODE-02", status: "online", cpuUsage: 25, memoryUsage: 72, vmCount: 15, vms: generateVMs(15, "CL1-N2") },
-        ],
-        totalMemoryGB: 512,
-        usedMemoryGB: 340,
-        totalStorageTB: 8,
-        usedStorageTB: 3.2,
-        cpuUsage: 18
-      },
-      {
-        id: "cluster-2",
-        name: "PARL-HYPERV-CL02",
-        nodes: [
-          { id: "node-2-1", name: "HV-NODE-03", status: "online", cpuUsage: 15, memoryUsage: 58, vmCount: 10, vms: generateVMs(10, "CL2-N1") },
-          { id: "node-2-2", name: "HV-NODE-04", status: "online", cpuUsage: 18, memoryUsage: 61, vmCount: 11, vms: generateVMs(11, "CL2-N2") },
-        ],
-        totalMemoryGB: 512,
-        usedMemoryGB: 290,
-        totalStorageTB: 8,
-        usedStorageTB: 4.1,
-        cpuUsage: 16
-      }
-    ];
+  // Mock Pull Logic - In a real scenario, this would use WinRM
+  const performWmiPull = async () => {
+    if (!pullConfig.enabled || !pullConfig.host) return;
+
+    try {
+      console.log(`[WMI PULL] Attempting to query ${pullConfig.host}...`);
+      
+      /* 
+         REAL IMPLEMENTATION PREVIEW:
+         import { WinRMClient } from 'winrm-client';
+         const client = new WinRMClient({
+           host: pullConfig.host,
+           port: 5985,
+           auth: { user: pullConfig.username, pass: pullConfig.password }
+         });
+         const command = "Get-VM | Select-Object Name, State, CpuUsage, MemoryAssigned | ConvertTo-Json";
+         const result = await client.runPowerShell(command);
+      */
+
+      // Simulating a successful WMI pull update
+      const now = new Date();
+      hyperVClustersStore = [
+        {
+          id: "wmi-cluster",
+          name: `WMI_PULL: ${pullConfig.host}`,
+          nodes: [
+            { 
+              id: "node-wmi", 
+              name: "REMOTE-HOST", 
+              status: "online", 
+              cpuUsage: Math.floor(Math.random() * 30), 
+              memoryUsage: 45, 
+              vmCount: 8, 
+              vms: Array.from({ length: 8 }).map((_, i) => ({
+                id: `wmi-vm-${i}`,
+                name: `WMI-VM-${i}`,
+                status: "running"
+              }))
+            }
+          ],
+          totalMemoryGB: 256,
+          usedMemoryGB: 120,
+          totalStorageTB: 4,
+          usedStorageTB: 1.5,
+          cpuUsage: 15,
+          lastPull: now.toISOString()
+        }
+      ];
+      console.log("[WMI PULL] Updated successfully via WMI simulation");
+    } catch (err) {
+      console.error("[WMI PULL] Failed:", err);
+    }
+  };
+
+  // Periodic pull task
+  setInterval(performWmiPull, pullConfig.interval);
+
+  app.get("/api/hyperv/clusters", (req, res) => {
+    if (hyperVClustersStore.length === 0 && !pullConfig.enabled) {
+      // Mock data...
+      const generateVMs = (count: number, prefix: string) => {
+        return Array.from({ length: count }).map((_, i) => ({
+          id: `vm-${prefix}-${i}`,
+          name: `${prefix}-VM-${String(i + 1).padStart(2, '0')}`,
+          status: Math.random() > 0.1 ? "running" : Math.random() > 0.5 ? "stopped" : "paused",
+          cpuUsage: Math.floor(Math.random() * 20),
+          memoryMB: Math.random() > 0.5 ? 4096 : 8192
+        }));
+      };
+
+      return res.json([
+        {
+          id: "cluster-1",
+          name: "PARL-HYPERV-CL01 (MOCK)",
+          nodes: [
+            { id: "node-1-1", name: "HV-NODE-01", status: "online", cpuUsage: 12, memoryUsage: 65, vmCount: 12, vms: generateVMs(12, "CL1-N1") },
+            { id: "node-1-2", name: "HV-NODE-02", status: "online", cpuUsage: 25, memoryUsage: 72, vmCount: 15, vms: generateVMs(15, "CL1-N2") },
+          ],
+          totalMemoryGB: 512,
+          usedMemoryGB: 340,
+          totalStorageTB: 8,
+          usedStorageTB: 3.2,
+          cpuUsage: 18
+        }
+      ]);
+    }
+    res.json(hyperVClustersStore);
+  });
+
+  app.get("/api/hyperv/settings", (req, res) => {
+    res.json({ enabled: pullConfig.enabled, host: pullConfig.host, interval: pullConfig.interval });
+  });
+
+  app.post("/api/hyperv/settings", express.json(), (req, res) => {
+    const { enabled, host, username, password, secret } = req.body;
+    if (secret !== process.env.HYPERV_UPDATE_SECRET && process.env.NODE_ENV === "production") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
     
-    res.json(clusters);
+    pullConfig = { 
+      ...pullConfig, 
+      enabled: !!enabled, 
+      host: host || pullConfig.host,
+      username: username || pullConfig.username,
+      password: password || pullConfig.password
+    };
+    
+    if (enabled) performWmiPull();
+    res.json({ status: "success", pullConfig: { enabled: pullConfig.enabled, host: pullConfig.host } });
+  });
+
+  app.post("/api/hyperv/update", express.json(), (req, res) => {
+    /* 
+      POWERSHELL PUSH EXAMPLE (Run this on Hyper-V Host):
+      $data = @{
+        secret = "your_secret"
+        clusters = @(@{
+          id = "cl01"
+          name = "PARL-HYPERV-CL01"
+          nodes = (Get-ClusterNode | Select-Object -Property @{N='id';E={$_.Id}}, @{N='name';E={$_.Name}}, @{N='status';E={if($_.State -eq 0){'online'}else{'offline'}}}, @{N='vmCount';E={(Get-VM -ComputerName $_.Name).Count}})
+        })
+      }
+      Invoke-RestMethod -Method Post -Uri "https://YOUR-APP-URL/api/hyperv/update" -ContentType "application/json" -Body ($data | ConvertTo-Json -Depth 10)
+    */
+    const { clusters, secret } = req.body;
+    
+    // Simple secret check (you should set this in your environment variables)
+    if (secret !== process.env.HYPERV_UPDATE_SECRET && process.env.NODE_ENV === "production") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    if (Array.isArray(clusters)) {
+      hyperVClustersStore = clusters;
+      res.json({ status: "updated", count: clusters.length });
+    } else {
+      res.status(400).json({ error: "Invalid data format" });
+    }
   });
   
   // Vite middleware for development

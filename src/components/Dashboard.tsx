@@ -148,37 +148,21 @@ function SiteCard({ site }: { site: Site }) {
 export function AnalyticsCard({
   title,
   value,
-  subtitle,
-  change,
   icon: Icon,
   colorClass = "text-blue-600",
 }: {
   title: string;
   value: string | number;
-  subtitle?: string;
-  change?: { value: string; positive: boolean };
   icon: React.ElementType;
   colorClass?: string;
 }) {
   return (
-    <div className="bg-white p-1.5 rounded-lg border border-slate-100 shadow-sm flex flex-col justify-center">
-      <div className="flex justify-between items-center">
-        <p className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">{title}</p>
-        <Icon className={cn("w-2.5 h-2.5", colorClass)} />
+    <div className="bg-white px-1.5 py-1 rounded border border-slate-100 shadow-sm flex flex-col justify-center items-center">
+      <div className="flex items-center gap-1 mb-0.5">
+        <Icon className={cn("w-2 h-2 opacity-50", colorClass)} />
+        <p className="text-[6px] text-slate-500 font-bold uppercase tracking-tight leading-none">{title}</p>
       </div>
-      <div className="flex items-baseline gap-1">
-        <h3 className="text-base font-black text-slate-900 leading-none">{value}</h3>
-        {change ? (
-          <span className={cn(
-            "text-[7px] font-black",
-            change.positive ? "text-blue-600" : "text-rose-600"
-          )}>
-            {change.value}
-          </span>
-        ) : subtitle ? (
-          <span className="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">{subtitle}</span>
-        ) : null}
-      </div>
+      <h3 className={cn("text-[11px] font-black leading-none", colorClass)}>{value}</h3>
     </div>
   );
 }
@@ -216,74 +200,55 @@ export function HyperVInfrastructureMatrix({ clusters }: { clusters: HyperVClust
   if (!clusters || clusters.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 h-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 h-full font-sans">
       {clusters.map((cluster) => {
         const memPercent = (cluster.usedMemoryGB / cluster.totalMemoryGB) * 100;
         const storagePercent = (cluster.usedStorageTB / cluster.totalStorageTB) * 100;
 
         return (
-          <div key={cluster.id} className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col gap-1.5 min-h-0 overflow-hidden">
-            <div className="flex justify-between items-center border-b border-blue-100/30 pb-1">
+          <div key={cluster.id} className="bg-white/40 rounded border border-blue-100/30 p-1 flex flex-col gap-1 min-h-0 overflow-hidden shadow-sm">
+            <div className="flex justify-between items-center border-b border-blue-100/20 pb-0.5">
               <div className="flex items-center gap-1">
-                <Layers className="w-3 h-3 text-blue-600" />
-                <span className="text-[8px] font-black text-blue-900 uppercase tracking-tight">{cluster.name}</span>
+                <Layers className="w-2.5 h-2.5 text-blue-600" />
+                <span className="text-[7.5px] font-black text-blue-900 uppercase tracking-tight">{cluster.name}</span>
               </div>
-              <div className="flex gap-2">
-                <div className="flex items-center gap-1">
+              <div className="flex gap-1.5">
+                <div className="flex items-center gap-0.5">
                   <Cpu className="w-2 h-2 text-slate-400" />
-                  <span className="text-[7px] font-black text-blue-600">{cluster.cpuUsage}%</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <HardDrive className="w-2 h-2 text-slate-400" />
-                  <span className="text-[7px] font-black text-emerald-600">{storagePercent.toFixed(0)}%</span>
+                  <span className="text-[6.5px] font-black text-blue-600">{cluster.cpuUsage}%</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-1 flex-1 min-h-0">
               {cluster.nodes.map((node) => (
-                <div key={node.id} className="bg-white/60 rounded p-1 border border-blue-50/50">
-                  <div className="flex justify-between items-center mb-1">
+                <div key={node.id} className="bg-white/60 rounded p-0.5 border border-blue-50/50 flex flex-col">
+                  <div className="flex justify-between items-center mb-0.5">
                     <div className="flex items-center gap-1">
-                      <Server className="w-2 h-2 text-slate-500" />
-                      <span className="text-[6px] font-bold text-slate-700 truncate max-w-[50px]">{node.name}</span>
+                      <Server className="w-2 h-2 text-slate-400" />
+                      <span className="text-[6px] font-bold text-slate-700 truncate max-w-[45px]">{node.name}</span>
                     </div>
-                    <div className={cn("w-1 h-1 rounded-full", node.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500')} />
+                    <div className={cn("w-1 h-1 rounded-full", node.status === 'online' ? 'bg-emerald-500 shadow-[0_0_3px_rgba(16,185,129,0.5)]' : 'bg-rose-500')} />
                   </div>
                   
-                  {/* VM Matrix Grid */}
-                  <div className="grid grid-cols-6 gap-0.5 mt-1">
-                    {node.vms.map((vm) => (
+                  <div className="grid grid-cols-8 gap-[1px] mt-0.5">
+                    {node.vms.slice(0, 32).map((vm) => (
                       <div 
                         key={vm.id} 
-                        title={`${vm.name} - ${vm.status}`}
                         className={cn(
-                          "w-1.5 h-1.5 rounded-[1px] transition-all",
+                          "w-1.5 h-1.5 rounded-[0.5px]",
                           vm.status === "running" ? "bg-blue-500" :
-                          vm.status === "paused" ? "bg-amber-400" : "bg-slate-200"
+                          vm.status === "paused" ? "bg-amber-400" : "bg-slate-300"
                         )}
                       />
                     ))}
-                    {/* Fillers to keep grid shape if needed */}
                   </div>
-                  <div className="mt-1 flex justify-between items-center">
+                  <div className="mt-auto pt-0.5 flex justify-between items-center">
                     <span className="text-[5px] font-black text-slate-400 uppercase tracking-tighter">{node.vmCount} VMs</span>
                     <span className="text-[5px] font-black text-blue-600 uppercase tracking-tighter">{node.memoryUsage}% RAM</span>
                   </div>
                 </div>
               ))}
-            </div>
-            
-            <div className="mt-auto pt-1 flex gap-2">
-              <div className="flex-1">
-                <div className="h-0.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600" style={{ width: `${memPercent}%` }} />
-                </div>
-                <div className="flex justify-between mt-0.5">
-                  <span className="text-[4px] font-black text-slate-400 uppercase">Memory</span>
-                  <span className="text-[4px] font-black text-blue-600 uppercase">{cluster.usedMemoryGB}GB / {cluster.totalMemoryGB}GB</span>
-                </div>
-              </div>
             </div>
           </div>
         );

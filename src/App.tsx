@@ -80,6 +80,39 @@ export default function App() {
     }
   };
 
+  const [pushMode, setPushMode] = useState(true);
+
+  const togglePullMode = async () => {
+    try {
+      const mode = !pushMode;
+      await axios.post("/api/hyperv/settings", { 
+        enabled: !mode,
+        host: "local-hyperv-host" 
+      });
+      setPushMode(mode);
+      fetchData(true);
+    } catch (err) {
+      console.error("Failed to toggle mode", err);
+    }
+  };
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [config, setConfig] = useState({ host: "", username: "", password: "" });
+
+  const saveSettings = async () => {
+    try {
+      await axios.post("/api/hyperv/settings", { 
+        ...config,
+        enabled: !pushMode,
+        secret: "your_secure_secret_here" 
+      });
+      setShowSettings(false);
+      fetchData(true);
+    } catch (err) {
+      console.error("Failed to save settings", err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => fetchData(), 5000);
@@ -172,6 +205,75 @@ export default function App() {
               </div>
               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">SYNC: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
             </div>
+            <div className="flex flex-col items-center mr-2">
+              <button 
+                onClick={togglePullMode}
+                className={cn(
+                  "px-2 py-0.5 rounded text-[7px] font-black uppercase transition-all border",
+                  pushMode ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-blue-600 text-white border-blue-700 shadow-sm"
+                )}
+              >
+                {pushMode ? "Source: Push" : "Source: WMI Pull"}
+              </button>
+            </div>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-1.5 bg-slate-50 hover:bg-slate-100 rounded-md transition-all border border-slate-200 text-slate-600"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+
+              {showSettings && (
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-blue-200 rounded-xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                  <h3 className="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Cloud className="w-3 h-3" /> Hyper-V Connector
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="text-[7px] font-black uppercase text-slate-400">Host (WinRM)</label>
+                      <input 
+                        type="text" 
+                        value={config.host}
+                        onChange={(e) => setConfig({...config, host: e.target.value})}
+                        placeholder="192.168.1.50"
+                        className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] focus:ring-1 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[7px] font-black uppercase text-slate-400">User</label>
+                        <input 
+                          type="text" 
+                          value={config.username}
+                          onChange={(e) => setConfig({...config, username: e.target.value})}
+                          placeholder="Administrator"
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[7px] font-black uppercase text-slate-400">Pass</label>
+                        <input 
+                          type="password" 
+                          value={config.password}
+                          onChange={(e) => setConfig({...config, password: e.target.value})}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] outline-none"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick={saveSettings}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[8px] font-bold uppercase tracking-widest mt-2 active:scale-95 transition-all"
+                    >
+                      Update Connection Settings
+                    </button>
+                    <p className="text-[6px] text-slate-400 text-center uppercase font-bold">Requires WinRM enabled on Host</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => fetchData(true)}
               disabled={refreshing}
@@ -183,62 +285,52 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 p-1 flex flex-col gap-1 min-h-0 overflow-hidden">
-        <div className="flex-1 min-h-0 flex flex-col gap-0.5">
+      <main className="flex-1 p-2 flex flex-col gap-2 min-h-0 overflow-hidden">
+        {/* Connectivity Matrix - Scalable Middle Section */}
+        <div className="flex-1 min-h-0 flex flex-col gap-1">
           <div className="flex justify-between items-center px-1">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Connectivity Matrix</h2>
+            <h2 className="text-[8px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Connectivity Matrix</h2>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <div className="w-1 h-1 rounded-full bg-emerald-500" />
                 <span className="text-[6px] font-bold text-slate-400 uppercase">ONLINE</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
-                <span className="text-[6px] font-bold text-slate-400 uppercase">OFFLINE</span>
+              <div className="flex items-center gap-1 text-rose-500">
+                <Activity className="w-2.5 h-2.5 animate-pulse" />
+                <span className="text-[6px] font-bold uppercase">ALERTS</span>
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-white/50 rounded-lg p-1.5 border border-blue-100/50 overflow-y-auto hide-scrollbar">
+          <div className="flex-1 bg-white/50 rounded-lg p-2 border border-blue-100/50 overflow-y-auto hide-scrollbar">
             <SiteStatusGrid sites={sites} />
           </div>
         </div>
 
-        <div className="h-[120px] shrink-0 min-h-0 bg-blue-900/10 rounded-lg border border-blue-200/40 p-1 mb-1">
+        {/* Infrastructure Matrix Row - Fixed Height for consistency */}
+        <div className="h-[130px] shrink-0 min-h-0 bg-blue-900/10 rounded-lg border border-blue-200/40 p-1.5 shadow-inner">
           <div className="flex justify-between items-center mb-1 px-1">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              <h2 className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-900">Virtualization Cluster Matrix (40+ VMs)</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <div className="w-1 h-1 bg-blue-500 rounded-[1px]" />
-                <span className="text-[5px] font-bold text-blue-900/40 uppercase">Running</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-1 h-1 bg-amber-400 rounded-[1px]" />
-                <span className="text-[5px] font-bold text-blue-900/40 uppercase">Paused</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-1 h-1 bg-slate-200 rounded-[1px]" />
-                <span className="text-[5px] font-bold text-blue-900/40 uppercase">Stopped</span>
-              </div>
+              <h2 className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-900">Virtualization Capacity (40+ VMs)</h2>
             </div>
           </div>
-          <div className="h-[calc(100%-12px)]">
+          <div className="h-[calc(100%-14px)]">
              <HyperVInfrastructureMatrix clusters={clusters} />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 grid-rows-2 gap-1 h-[280px] shrink-0 min-h-0">
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">AV Stream</h2>
-            <div className="flex-1 min-h-0">
+        {/* 3x2 Dashboard Grid - Fixed Height to prevent footer clipping on TV */}
+        <div className="grid grid-cols-3 grid-rows-2 gap-1.5 h-[260px] shrink-0 min-h-0">
+          {/* Row 1 */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">AV FEED</h2>
+            <div className="flex-1 min-h-0 rounded overflow-hidden">
               <VideoMonitoring streams={streams} />
             </div>
           </div>
 
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden text-center">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">ITSM</h2>
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden text-center shadow-sm">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">TICKETS</h2>
             <div className="grid grid-cols-1 gap-1 flex-1 p-0.5">
               <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
               <AnalyticsCard title="Pend" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
@@ -246,42 +338,43 @@ export default function App() {
             </div>
           </div>
 
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Desk</h2>
-            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-0.5">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">TEAM STATUS</h2>
+            <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-1">
               <AgentPerformanceList agents={analytics?.agents} />
             </div>
           </div>
 
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">OOO</h2>
+          {/* Row 2 */}
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">ABSENCE</h2>
              <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5 content-start">
-               {oooStatus?.users?.filter((u: any) => u.status === "Out of Office").slice(0, 10).map((user: any, idx: number) => (
-                 <div key={idx} className="bg-amber-50/50 border border-amber-100 p-0.5 rounded text-[5px] font-bold text-amber-900 truncate uppercase">
+               {oooStatus?.users?.filter((u: any) => u.status === "Out of Office").slice(0, 8).map((user: any, idx: number) => (
+                 <div key={idx} className="bg-amber-50/50 border border-amber-100 p-1 rounded text-[6px] font-bold text-amber-900 truncate uppercase">
                    {user.name}
                  </div>
                ))}
              </div>
           </div>
 
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Agenda</h2>
-             <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-0.5 p-0.5">
-               {calendar?.events?.slice(0, 5).map((event: any, idx: number) => (
-                 <div key={idx} className="bg-blue-50/50 border border-blue-100 p-0.5 rounded text-[5px] font-bold text-blue-900 truncate uppercase">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">AGENDA</h2>
+             <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-1 p-0.5">
+               {calendar?.events?.slice(0, 4).map((event: any, idx: number) => (
+                 <div key={idx} className="bg-blue-50/50 border border-blue-100 p-1 rounded text-[6px] font-bold text-blue-900 truncate uppercase">
                     {event.subject}
                  </div>
                ))}
              </div>
           </div>
 
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Watchdog</h2>
-             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-0.5 p-0.5 content-start">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col min-h-0 overflow-hidden shadow-sm">
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">WATCHDOG</h2>
+             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5 content-start">
                {watchdogs?.map((service, idx) => (
-                 <div key={idx} className="flex items-center gap-0.5 bg-emerald-50 p-0.5 rounded border border-emerald-100">
-                    <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full" />
-                    <span className="text-[4px] font-black text-emerald-900 truncate uppercase">{service.name}</span>
+                 <div key={idx} className="flex items-center gap-1 bg-emerald-50 p-1 rounded border border-emerald-100">
+                    <div className="w-1 h-1 bg-emerald-500 rounded-full" />
+                    <span className="text-[5px] font-black text-emerald-900 truncate uppercase">{service.name}</span>
                  </div>
                ))}
              </div>
