@@ -14,8 +14,8 @@ import {
   RefreshCw, Settings, Search, Bell, Map, Share2, Activity, Globe, Building2,
   Cloud, Sun, CloudRain, Wind, Thermometer, Calendar, Clock
 } from "lucide-react";
-import { Site, FreshserviceAnalytics, monitoring_stream, WatchdogService } from "./types";
-import { SiteStatusGrid, AnalyticsCard, AgentPerformanceList, VideoMonitoring } from "./components/Dashboard";
+import { Site, FreshserviceAnalytics, monitoring_stream, WatchdogService, HyperVCluster } from "./types";
+import { SiteStatusGrid, AnalyticsCard, AgentPerformanceList, VideoMonitoring, HyperVInfrastructureMatrix } from "./components/Dashboard";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -39,23 +39,24 @@ export default function App() {
   const [analytics, setAnalytics] = useState<FreshserviceAnalytics | null>(null);
   const [streams, setStreams] = useState<monitoring_stream[]>([]);
   const [watchdogs, setWatchdogs] = useState<WatchdogService[]>([]);
+  const [clusters, setClusters] = useState<HyperVCluster[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [oooStatus, setOooStatus] = useState<any>(null);
   const [calendar, setCalendar] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const [sitesRes, analyticsRes, streamsRes, watchdogRes, weatherRes, oooRes, calRes] = await Promise.all([
+      const [sitesRes, analyticsRes, streamsRes, watchdogRes, clustersRes, weatherRes, oooRes, calRes] = await Promise.all([
         axios.get("/api/sites"),
         axios.get("/api/freshservice/analytics"),
         axios.get("/api/streams"),
         axios.get("/api/watchdog"),
+        axios.get("/api/hyperv/clusters"),
         axios.get("/api/weather"),
         axios.get("/api/exchange/ooo"),
         axios.get("/api/exchange/calendar")
@@ -64,14 +65,15 @@ export default function App() {
       setAnalytics(analyticsRes.data);
       setStreams(streamsRes.data);
       setWatchdogs(watchdogRes.data);
+      setClusters(clustersRes.data);
       setWeather(weatherRes.data);
       setOooStatus(oooRes.data);
       setCalendar(calRes.data);
       setLastUpdated(new Date());
       setError(null);
-    } catch (error: any) {
-      console.error("Fetch Error:", error);
-      setError(`CONNECTION ERROR: ${error.message}`);
+    } catch (err: any) {
+      console.error("Fetch Error:", err);
+      setError(`CONNECTION ERROR: ${err.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,7 +82,7 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => fetchData(), 5000); // Refresh every 5s
+    const interval = setInterval(() => fetchData(), 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -127,7 +129,6 @@ export default function App() {
 
   return (
     <div className="h-screen bg-[#f0f4f8] text-slate-950 font-sans overflow-hidden flex flex-col text-[12px]">
-      {/* Header - Made more compact for low res */}
       <header className="bg-white border-b border-blue-100 py-2 px-4 flex justify-between items-center shrink-0 h-14">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center shadow-md">
@@ -140,7 +141,6 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Hobart Weather Widget */}
           {weather && (
             <div className="flex items-center gap-3 px-3 py-1.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
               <div className="flex items-baseline gap-1">
@@ -183,9 +183,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Kiosk Content Area */}
       <main className="flex-1 p-1 flex flex-col gap-1 min-h-0 overflow-hidden">
-        {/* Connectivity Matrix - Full Width Top */}
         <div className="flex-1 min-h-0 flex flex-col gap-0.5">
           <div className="flex justify-between items-center px-1">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none py-0.5">Connectivity Matrix</h2>
@@ -205,196 +203,88 @@ export default function App() {
           </div>
         </div>
 
-        {/* Global Footer Grid - 3 Columns, 2 Rows */}
-        <div className="grid grid-cols-3 gap-1 grid-rows-2 h-[300px] shrink-0 min-h-0">
-          {/* Block 1: Video Streams */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="h-[140px] shrink-0 min-h-0 bg-blue-900/10 rounded-lg border border-blue-200/40 p-1 mb-1">
+          <div className="flex justify-between items-center mb-1 px-1">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <h2 className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-900">Virtualization Cluster Matrix (40+ VMs)</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <div className="w-1 h-1 bg-blue-500 rounded-[1px]" />
+                <span className="text-[5px] font-bold text-blue-900/40 uppercase">Running</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1 h-1 bg-amber-400 rounded-[1px]" />
+                <span className="text-[5px] font-bold text-blue-900/40 uppercase">Paused</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1 h-1 bg-slate-200 rounded-[1px]" />
+                <span className="text-[5px] font-bold text-blue-900/40 uppercase">Stopped</span>
+              </div>
+            </div>
+          </div>
+          <div className="h-[calc(100%-12px)]">
+             <HyperVInfrastructureMatrix clusters={clusters} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 grid-rows-2 gap-1 h-[320px] shrink-0 min-h-0">
+          <div className="col-span-2 row-span-1 bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Stream</h2>
             <div className="flex-1 min-h-0">
-               <VideoMonitoring streams={streams} />
+              <VideoMonitoring streams={streams} />
             </div>
           </div>
 
-          {/* Block 2: ITSM Status */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden text-center">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">ITSM</h2>
-            <div className="grid grid-cols-1 gap-1 flex-1 px-0.5 pb-0.5">
+            <div className="grid grid-cols-1 gap-1 flex-1 p-1">
               <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
               <AnalyticsCard title="Pend" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
               <AnalyticsCard title="Res" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-emerald-500" />
             </div>
           </div>
 
-          {/* Block 3: Service Desk (Freshservice) */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">Service Desk</h2>
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Desk</h2>
             <div className="flex-1 overflow-y-auto hide-scrollbar bg-white/30 rounded p-0.5">
               <AgentPerformanceList agents={analytics?.agents} />
             </div>
           </div>
 
-          {/* Block 4: Staff Presence (Exchange) */}
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Out of Office</h2>
-              {oooStatus?.lastSync && (
-                <div className="flex items-center gap-1">
-                  {oooStatus.isSyncing && <RefreshCw className="w-2 h-2 text-amber-500 animate-spin" />}
-                  <span className="text-[5px] font-bold text-slate-400 uppercase tracking-tighter">
-                    Synced: {new Date(oooStatus.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className={cn(
-              "flex-1 overflow-y-auto hide-scrollbar grid gap-x-1 gap-y-0.5 items-start content-start",
-              oooStatus?.users?.filter((u: any) => u.status === "Out of Office" && u.returnDate).length > 20 ? "grid-cols-4" : 
-              oooStatus?.users?.filter((u: any) => u.status === "Out of Office" && u.returnDate).length > 8 ? "grid-cols-3" : "grid-cols-2"
-            )}>
-              {oooStatus?.users ? (
-                (() => {
-                  const oooWithDate = oooStatus.users.filter((u: any) => u.status === "Out of Office" && u.returnDate);
-                  if (oooWithDate.length === 0) {
-                    return (
-                      <div className="col-span-full flex-1 flex flex-col items-center justify-center gap-1 opacity-40 py-4">
-                        <CheckCircle className="w-4 h-4 text-emerald-500" />
-                        <span className="text-[6px] font-black uppercase text-slate-400">No Scheduled OOO</span>
-                      </div>
-                    );
-                  }
-                  return oooWithDate.map((user: any, idx: number) => {
-                    const rDate = new Date(user.returnDate);
-                    const nowHobart = new Date(new Date().toLocaleString("en-US", {timeZone: "Australia/Hobart"}));
-                    const isToday = rDate.toDateString() === nowHobart.toDateString();
-                    
-                    const dateStr = isToday 
-                      ? `Today @ ${rDate.toLocaleTimeString("en-AU", { hour: '2-digit', minute: '2-digit', timeZone: 'Australia/Hobart' })}`
-                      : rDate.toLocaleDateString("en-AU", { day: 'numeric', month: 'short', timeZone: 'Australia/Hobart' });
-                    
-                    return (
-                      <div key={idx} className="flex flex-col px-1 py-0.5 rounded bg-amber-50/70 border border-amber-100/50 min-w-0">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <div className="w-1 h-1 rounded-full bg-amber-500 shrink-0 animate-pulse" />
-                          <span className="text-[6px] font-bold text-amber-900 truncate leading-tight uppercase">{user.name}</span>
-                        </div>
-                        <span className="text-[5px] font-black text-amber-600 uppercase tracking-tighter mt-0.5 ml-1.5 opacity-80">
-                          Till: {dateStr}
-                        </span>
-                      </div>
-                    );
-                  });
-                })()
-              ) : (
-                <div className="col-span-full flex-1 flex items-center justify-center text-[7px] text-slate-400 font-bold uppercase italic py-4">Syncing...</div>
-              )}
-            </div>
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">OOO</h2>
+             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5">
+               {oooStatus?.users?.filter((u: any) => u.status === "Out of Office").slice(0, 10).map((user: any, idx: number) => (
+                 <div key={idx} className="bg-amber-50/50 border border-amber-100 p-0.5 rounded text-[5px] font-bold text-amber-900 truncate uppercase">
+                   {user.name}
+                 </div>
+               ))}
+             </div>
           </div>
 
-          {/* Block 5: Daily Agenda */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden shadow-sm">
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Daily Agenda</h2>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-2 h-2 text-blue-400" />
-                <span className="text-[5px] font-bold text-slate-400 uppercase tracking-tighter">Helpdesk Shared</span>
-              </div>
-            </div>
-            <div className={cn(
-              "flex-1 overflow-y-auto hide-scrollbar grid gap-x-1 gap-y-0.5 items-start content-start",
-              calendar?.events?.length > 4 ? "grid-cols-2" : "grid-cols-1"
-            )}>
-              {calendar?.events?.length > 0 ? (
-                calendar.events.map((event: any, idx: number) => {
-                  let startTime = "00:00";
-                  if (event.isAllDay) {
-                    startTime = "ALL DAY";
-                  } else {
-                    const d = new Date(event.start);
-                    if (!isNaN(d.getTime())) {
-                      startTime = d.toLocaleTimeString("en-GB", { 
-                        hour: '2-digit', 
-                        minute: '2-digit', 
-                        timeZone: 'Australia/Hobart'
-                      });
-                    } else if (typeof event.start === 'string' && event.start.includes('T')) {
-                      startTime = event.start.split('T')[1].substring(0, 5);
-                    }
-                  }
-                  
-                  return (
-                    <div key={idx} className="flex gap-1 p-1 rounded bg-blue-50/40 border border-blue-100/30 min-w-0">
-                      <div className="flex flex-col items-center justify-center min-w-[24px] border-r border-blue-100/50 pr-1 shrink-0">
-                        <Clock className="w-1.5 h-1.5 text-blue-400 mb-0.5" />
-                        <span className={cn(
-                          "font-black text-blue-800 leading-none text-center",
-                          event.isAllDay ? "text-[4px] leading-[0.8]" : "text-[5.5px]"
-                        )}>
-                          {event.isAllDay ? <>ALL<br/>DAY</> : startTime}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[6px] font-bold text-slate-800 truncate leading-tight uppercase">{event.subject}</p>
-                        <div className="flex items-center gap-0.5 mt-0.5">
-                          <Map className="w-1 h-1 text-slate-400 shrink-0" />
-                          <span className="text-[4.5px] font-bold text-slate-400 uppercase truncate leading-none">{event.location}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center opacity-30 gap-1 mt-4">
-                  <Calendar className="w-4 h-4 text-slate-300" />
-                  <span className="text-[6px] font-black uppercase text-slate-400">No Events Scheduled</span>
-                </div>
-              )}
-            </div>
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Agenda</h2>
+             <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-0.5 p-0.5">
+               {calendar?.events?.slice(0, 5).map((event: any, idx: number) => (
+                 <div key={idx} className="bg-blue-50/50 border border-blue-100 p-0.5 rounded text-[5px] font-bold text-blue-900 truncate uppercase">
+                    {event.subject}
+                 </div>
+               ))}
+             </div>
           </div>
 
-          {/* Block 6: Service Watchdog */}
-          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden shadow-sm">
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none">Service Watchdog</h2>
-              <div className="flex items-center gap-1">
-                <Server className="w-2 h-2 text-blue-400" />
-                <span className="text-[5px] font-bold text-slate-400 uppercase tracking-tighter">Remote Core Services</span>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto hide-scrollbar grid gap-x-1 gap-y-0.5 items-start content-start grid-cols-2">
-              {watchdogs?.length > 0 ? (
-                watchdogs.map((service, idx) => (
-                  <div key={idx} className={cn(
-                    "flex flex-col gap-0.5 p-1 rounded border min-w-0 transition-colors",
-                    service.status === "online" ? "bg-emerald-50/40 border-emerald-100/30" : "bg-rose-50/80 border-rose-200 shadow-[0_0_10px_rgba(225,29,72,0.1)] flash-red"
-                  )}>
-                    <div className="flex items-center gap-1 min-w-0">
-                      <div className={cn(
-                        "w-1 h-1 rounded-full shrink-0",
-                        service.status === "online" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.5)]"
-                      )} />
-                      <span className={cn(
-                        "text-[6.5px] font-bold truncate leading-tight uppercase",
-                        service.status === "online" ? "text-emerald-900" : "text-rose-900"
-                      )}>{service.name}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-0.5 ml-2">
-                      <span className={cn(
-                        "text-[5.5px] font-mono leading-none tracking-tighter truncate opacity-70",
-                        service.status === "online" ? "text-emerald-700" : "text-rose-700"
-                      )}>
-                        {service.host}{service.port ? `:${service.port}` : ''}
-                      </span>
-                      <span className={cn(
-                        "text-[5.5px] font-black uppercase tracking-tighter",
-                        service.status === "online" ? "text-emerald-600" : "text-rose-600"
-                      )}>{service.status}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full flex items-center justify-center text-[7px] text-slate-400 font-bold uppercase py-4 opacity-50">Checking...</div>
-              )}
-            </div>
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Watchdog</h2>
+             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-0.5 p-0.5">
+               {watchdogs?.map((service, idx) => (
+                 <div key={idx} className="flex items-center gap-0.5 bg-emerald-50 p-0.5 rounded border border-emerald-100">
+                    <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full" />
+                    <span className="text-[4px] font-black text-emerald-900 truncate uppercase">{service.name}</span>
+                 </div>
+               ))}
+             </div>
           </div>
         </div>
       </main>

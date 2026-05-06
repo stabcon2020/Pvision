@@ -186,26 +186,108 @@ export function AnalyticsCard({
 export function AgentPerformanceList({ agents }: { agents?: AgentPerformance[] }) {
   if (!agents) return null;
   return (
-    <div className="space-y-0.5">
-      {agents.map((agent) => (
-        <div key={agent.id} className="flex items-center gap-1.5 p-1.5 bg-white border border-slate-100 rounded-lg shadow-sm">
-          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[7px] uppercase border border-blue-200">
+    <div className="flex flex-col gap-0.5">
+      {agents.slice(0, 4).map((agent) => (
+        <div key={agent.id} className="flex items-center gap-1 px-1 py-0.5 bg-white border border-slate-100 rounded shadow-sm">
+          <div className="w-5 h-5 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-blue-700 font-bold text-[6px] uppercase border border-blue-200">
             {agent.avatar}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[8px] font-bold text-slate-900 truncate leading-tight">{agent.name}</p>
-            <p className="text-[6px] text-slate-500 font-medium tracking-tight">Active</p>
+            <p className="text-[7px] font-bold text-slate-900 truncate leading-tight">{agent.name}</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] font-black text-blue-700 leading-none">{agent.resolved}</p>
-            <p className="text-[5px] text-slate-400 font-black uppercase tracking-tighter">Solved</p>
+            <p className="text-[7px] font-black text-emerald-600 leading-none">{agent.resolved}</p>
+            <p className="text-[4px] text-slate-400 font-black uppercase tracking-tighter">Solved</p>
           </div>
-          <div className="text-right ml-1 border-l border-slate-100 pl-1.5">
-            <p className="text-[8px] font-black text-slate-400 leading-none">{agent.open}</p>
-            <p className="text-[5px] text-slate-400 font-black uppercase tracking-tighter">Open</p>
+          <div className="text-right ml-1 border-l border-slate-100 pl-1">
+            <p className="text-[7px] font-black text-rose-500 leading-none">{agent.open}</p>
+            <p className="text-[4px] text-slate-400 font-black uppercase tracking-tighter">Open</p>
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+import { HyperVCluster, HyperVVM } from "../types";
+import { Server, Database, HardDrive, Cpu, Layers } from "lucide-react";
+
+export function HyperVInfrastructureMatrix({ clusters }: { clusters: HyperVCluster[] }) {
+  if (!clusters || clusters.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 h-full">
+      {clusters.map((cluster) => {
+        const memPercent = (cluster.usedMemoryGB / cluster.totalMemoryGB) * 100;
+        const storagePercent = (cluster.usedStorageTB / cluster.totalStorageTB) * 100;
+
+        return (
+          <div key={cluster.id} className="bg-white/40 rounded-lg border border-blue-100/30 p-1.5 flex flex-col gap-1.5 min-h-0 overflow-hidden">
+            <div className="flex justify-between items-center border-b border-blue-100/30 pb-1">
+              <div className="flex items-center gap-1">
+                <Layers className="w-3 h-3 text-blue-600" />
+                <span className="text-[8px] font-black text-blue-900 uppercase tracking-tight">{cluster.name}</span>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex items-center gap-1">
+                  <Cpu className="w-2 h-2 text-slate-400" />
+                  <span className="text-[7px] font-black text-blue-600">{cluster.cpuUsage}%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <HardDrive className="w-2 h-2 text-slate-400" />
+                  <span className="text-[7px] font-black text-emerald-600">{storagePercent.toFixed(0)}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
+              {cluster.nodes.map((node) => (
+                <div key={node.id} className="bg-white/60 rounded p-1 border border-blue-50/50">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-1">
+                      <Server className="w-2 h-2 text-slate-500" />
+                      <span className="text-[6px] font-bold text-slate-700 truncate max-w-[50px]">{node.name}</span>
+                    </div>
+                    <div className={cn("w-1 h-1 rounded-full", node.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500')} />
+                  </div>
+                  
+                  {/* VM Matrix Grid */}
+                  <div className="grid grid-cols-6 gap-0.5 mt-1">
+                    {node.vms.map((vm) => (
+                      <div 
+                        key={vm.id} 
+                        title={`${vm.name} - ${vm.status}`}
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-[1px] transition-all",
+                          vm.status === "running" ? "bg-blue-500" :
+                          vm.status === "paused" ? "bg-amber-400" : "bg-slate-200"
+                        )}
+                      />
+                    ))}
+                    {/* Fillers to keep grid shape if needed */}
+                  </div>
+                  <div className="mt-1 flex justify-between items-center">
+                    <span className="text-[5px] font-black text-slate-400 uppercase tracking-tighter">{node.vmCount} VMs</span>
+                    <span className="text-[5px] font-black text-blue-600 uppercase tracking-tighter">{node.memoryUsage}% RAM</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-auto pt-1 flex gap-2">
+              <div className="flex-1">
+                <div className="h-0.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600" style={{ width: `${memPercent}%` }} />
+                </div>
+                <div className="flex justify-between mt-0.5">
+                  <span className="text-[4px] font-black text-slate-400 uppercase">Memory</span>
+                  <span className="text-[4px] font-black text-blue-600 uppercase">{cluster.usedMemoryGB}GB / {cluster.totalMemoryGB}GB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

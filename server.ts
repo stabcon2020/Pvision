@@ -565,6 +565,49 @@ async function startServer() {
     );
     res.json(services);
   });
+
+  app.get("/api/hyperv/clusters", (req, res) => {
+    const generateVMs = (count: number, prefix: string) => {
+      return Array.from({ length: count }).map((_, i) => ({
+        id: `vm-${prefix}-${i}`,
+        name: `${prefix}-VM-${String(i + 1).padStart(2, '0')}`,
+        status: Math.random() > 0.1 ? "running" : Math.random() > 0.5 ? "stopped" : "paused",
+        cpuUsage: Math.floor(Math.random() * 20),
+        memoryMB: Math.random() > 0.5 ? 4096 : 8192
+      }));
+    };
+
+    const clusters = [
+      {
+        id: "cluster-1",
+        name: "PARL-HYPERV-CL01",
+        nodes: [
+          { id: "node-1-1", name: "HV-NODE-01", status: "online", cpuUsage: 12, memoryUsage: 65, vmCount: 12, vms: generateVMs(12, "CL1-N1") },
+          { id: "node-1-2", name: "HV-NODE-02", status: "online", cpuUsage: 25, memoryUsage: 72, vmCount: 15, vms: generateVMs(15, "CL1-N2") },
+        ],
+        totalMemoryGB: 512,
+        usedMemoryGB: 340,
+        totalStorageTB: 8,
+        usedStorageTB: 3.2,
+        cpuUsage: 18
+      },
+      {
+        id: "cluster-2",
+        name: "PARL-HYPERV-CL02",
+        nodes: [
+          { id: "node-2-1", name: "HV-NODE-03", status: "online", cpuUsage: 15, memoryUsage: 58, vmCount: 10, vms: generateVMs(10, "CL2-N1") },
+          { id: "node-2-2", name: "HV-NODE-04", status: "online", cpuUsage: 18, memoryUsage: 61, vmCount: 11, vms: generateVMs(11, "CL2-N2") },
+        ],
+        totalMemoryGB: 512,
+        usedMemoryGB: 290,
+        totalStorageTB: 8,
+        usedStorageTB: 4.1,
+        cpuUsage: 16
+      }
+    ];
+    
+    res.json(clusters);
+  });
   
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
