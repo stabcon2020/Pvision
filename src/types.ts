@@ -40,35 +40,6 @@ export interface AgentPerformance {
   avatar: string;
 }
 
-export interface HyperVVM {
-  id: string;
-  name: string;
-  status: "running" | "stopped" | "paused";
-  cpuUsage: number;
-  memoryMB: number;
-}
-
-export interface HyperVNode {
-  id: string;
-  name: string;
-  status: "online" | "offline";
-  cpuUsage: number;
-  memoryUsage: number;
-  vmCount: number;
-  vms: HyperVVM[];
-}
-
-export interface HyperVCluster {
-  id: string;
-  name: string;
-  nodes: HyperVNode[];
-  totalMemoryGB: number;
-  usedMemoryGB: number;
-  totalStorageTB: number;
-  usedStorageTB: number;
-  cpuUsage: number;
-}
-
 export interface WatchdogService {
   id: string;
   name: string;
