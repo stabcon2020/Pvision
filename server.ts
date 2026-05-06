@@ -552,21 +552,31 @@ async function startServer() {
     }
 
     if (Array.isArray(services)) {
-      PUSHED_SERVICES = services.map((s, i) => {
-        // Map common Windows service states to dashboard 'online'/'offline'
+      services.forEach((s) => {
         const rawStatus = String(s.status || "").toLowerCase();
         const isOnline = ["running", "online", "started", "active", "startpending"].includes(rawStatus);
         
-        return {
-          id: s.id || `pushed-${i}`,
+        // Use provided ID or generate one from name to ensure uniqueness
+        const serviceId = s.id || s.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+        
+        const updatedService = {
+          id: serviceId,
           name: s.name,
-          status: isOnline ? "online" : "offline",
-          rawStatus: s.status, // Keep original for reference
+          status: isOnline ? "online" : "offline" as const,
+          rawStatus: s.status,
           lastUpdate: new Date().toISOString()
         };
+
+        const existingIndex = PUSHED_SERVICES.findIndex(ps => ps.id === serviceId);
+        if (existingIndex > -1) {
+          PUSHED_SERVICES[existingIndex] = updatedService;
+        } else {
+          PUSHED_SERVICES.push(updatedService);
+        }
       });
-      console.log(`[SERVICE UPDATE] Successfully updated ${services.length} services.`);
-      res.json({ status: "success", received: services.length });
+      
+      console.log(`[SERVICE UPDATE] Updated ${services.length} services. Total tracked: ${PUSHED_SERVICES.length}`);
+      res.json({ status: "success", received: services.length, total: PUSHED_SERVICES.length });
     } else {
       console.error("[SERVICE UPDATE] Invalid data format received.");
       res.status(400).json({ error: "Invalid format" });
