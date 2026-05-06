@@ -527,6 +527,8 @@ async function startServer() {
     res.json(oooCache);
   });
 
+  let PUSHED_SERVICES: any[] = [];
+
   app.get("/api/exchange/calendar", (req, res) => {
     res.json(calendarCache);
   });
@@ -539,8 +541,27 @@ async function startServer() {
     })));
   });
 
+  app.post("/api/services/update", express.json(), (req, res) => {
+    const { services, secret } = req.body;
+    if (secret !== process.env.HYPERV_UPDATE_SECRET && process.env.NODE_ENV === "production") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    if (Array.isArray(services)) {
+      PUSHED_SERVICES = services.map((s, i) => ({
+        id: s.id || `pushed-${i}`,
+        name: s.name,
+        status: s.status,
+        lastUpdate: new Date().toISOString()
+      }));
+      res.json({ status: "success", received: services.length });
+    } else {
+      res.status(400).json({ error: "Invalid format" });
+    }
+  });
+
   app.get("/api/watchdog", async (req, res) => {
-    const services = await Promise.all(
+    const internalServices = await Promise.all(
       WATCHDOG_CONFIG.map(async (service, i) => {
         let status = false;
         try {
@@ -563,7 +584,9 @@ async function startServer() {
         };
       })
     );
-    res.json(services);
+    
+    // Combine with pushed services
+    res.json([...internalServices, ...PUSHED_SERVICES]);
   });
 
   // Vite middleware for development

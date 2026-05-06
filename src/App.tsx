@@ -255,9 +255,25 @@ export default function App() {
              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">WATCHDOG</h2>
              <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5 content-start">
                {watchdogs?.map((service, idx) => (
-                 <div key={idx} className="flex items-center gap-1 bg-emerald-50 p-1 rounded border border-emerald-100">
-                    <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-                    <span className="text-[5px] font-black text-emerald-900 truncate uppercase">{service.name}</span>
+                 <div 
+                   key={idx} 
+                   className={cn(
+                     "flex items-center gap-1 p-1 rounded border transition-colors",
+                     service.status === 'online' 
+                       ? "bg-emerald-50 border-emerald-100" 
+                       : "bg-rose-50 border-rose-100"
+                   )}
+                 >
+                    <div className={cn(
+                      "w-1 h-1 rounded-full",
+                      service.status === 'online' ? "bg-emerald-500" : "bg-rose-500 animate-pulse"
+                    )} />
+                    <span className={cn(
+                      "text-[5px] font-black truncate uppercase",
+                      service.status === 'online' ? "text-emerald-900" : "text-rose-900"
+                    )}>
+                      {service.name}
+                    </span>
                  </div>
                ))}
              </div>
