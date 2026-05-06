@@ -569,13 +569,15 @@ async function startServer() {
 
         const existingIndex = PUSHED_SERVICES.findIndex(ps => ps.id === serviceId);
         if (existingIndex > -1) {
+          console.log(`[SERVICE UPDATE] Overwriting existing service ID: ${serviceId} (from ${req.ip})`);
           PUSHED_SERVICES[existingIndex] = updatedService;
         } else {
+          console.log(`[SERVICE UPDATE] Registering new service ID: ${serviceId} (from ${req.ip})`);
           PUSHED_SERVICES.push(updatedService);
         }
       });
       
-      console.log(`[SERVICE UPDATE] Updated ${services.length} services. Total tracked: ${PUSHED_SERVICES.length}`);
+      console.log(`[SERVICE UPDATE] Current IDs: ${PUSHED_SERVICES.map(p => p.id).join(", ")}`);
       res.json({ status: "success", received: services.length, total: PUSHED_SERVICES.length });
     } else {
       console.error("[SERVICE UPDATE] Invalid data format received.");
