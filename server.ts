@@ -541,21 +541,41 @@ async function startServer() {
     })));
   });
 
-  app.post("/api/services/update", express.json(), (req, res) => {
+  app.post("/api/services/update", (req, res) => {
     const { services, secret } = req.body;
-    if (secret !== process.env.HYPERV_UPDATE_SECRET && process.env.NODE_ENV === "production") {
+    const expectedSecret = process.env.HYPERV_UPDATE_SECRET;
+    
+    console.log(`[SERVICE UPDATE] Incoming from ${req.ip}. Secret provided: ${secret ? 'YES' : 'NO'}`);
+
+    // Auth check: Always check if secret is set in .env
+    if (!expectedSecret) {
+      console.error("[SERVICE UPDATE] HYPERV_UPDATE_SECRET is not set in .env! Rejecting all updates.");
+      return res.status(500).json({ error: "Server configuration error" });
+    }
+
+    if (secret !== expectedSecret) {
+      console.warn(`[SERVICE UPDATE] Unauthorized attempt. Expected: ${expectedSecret}, Received: ${secret}`);
       return res.status(403).json({ error: "Unauthorized" });
     }
 
     if (Array.isArray(services)) {
-      PUSHED_SERVICES = services.map((s, i) => ({
-        id: s.id || `pushed-${i}`,
-        name: s.name,
-        status: s.status,
-        lastUpdate: new Date().toISOString()
-      }));
+      PUSHED_SERVICES = services.map((s, i) => {
+        // Map common Windows service states to dashboard 'online'/'offline'
+        const rawStatus = String(s.status || "").toLowerCase();
+        const isOnline = ["running", "online", "started", "active", "startpending"].includes(rawStatus);
+        
+        return {
+          id: s.id || `pushed-${i}`,
+          name: s.name,
+          status: isOnline ? "online" : "offline",
+          rawStatus: s.status, // Keep original for reference
+          lastUpdate: new Date().toISOString()
+        };
+      });
+      console.log(`[SERVICE UPDATE] Successfully updated ${services.length} services.`);
       res.json({ status: "success", received: services.length });
     } else {
+      console.error("[SERVICE UPDATE] Invalid data format received.");
       res.status(400).json({ error: "Invalid format" });
     }
   });
