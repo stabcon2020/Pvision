@@ -203,7 +203,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="h-[140px] shrink-0 min-h-0 bg-blue-900/10 rounded-lg border border-blue-200/40 p-1 mb-1">
+        <div className="h-[120px] shrink-0 min-h-0 bg-blue-900/10 rounded-lg border border-blue-200/40 p-1 mb-1">
           <div className="flex justify-between items-center mb-1 px-1">
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
@@ -229,9 +229,9 @@ export default function App() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 grid-rows-2 gap-1 h-[320px] shrink-0 min-h-0">
-          <div className="col-span-2 row-span-1 bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
-            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">AV Stream</h2>
+        <div className="grid grid-cols-3 grid-rows-2 gap-1 h-[280px] shrink-0 min-h-0">
+          <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
+            <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">AV Stream</h2>
             <div className="flex-1 min-h-0">
               <VideoMonitoring streams={streams} />
             </div>
@@ -239,7 +239,7 @@ export default function App() {
 
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden text-center">
             <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1">ITSM</h2>
-            <div className="grid grid-cols-1 gap-1 flex-1 p-1">
+            <div className="grid grid-cols-1 gap-1 flex-1 p-0.5">
               <AnalyticsCard title="Open" value={analytics?.summary?.open || 0} icon={Ticket} colorClass="text-blue-600" />
               <AnalyticsCard title="Pend" value={analytics?.summary?.pending || 0} icon={Timer} colorClass="text-amber-600" />
               <AnalyticsCard title="Res" value={analytics?.summary?.resolved || 0} icon={CheckCircle} colorClass="text-emerald-500" />
@@ -255,7 +255,7 @@ export default function App() {
 
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">OOO</h2>
-             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5">
+             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-1 p-0.5 content-start">
                {oooStatus?.users?.filter((u: any) => u.status === "Out of Office").slice(0, 10).map((user: any, idx: number) => (
                  <div key={idx} className="bg-amber-50/50 border border-amber-100 p-0.5 rounded text-[5px] font-bold text-amber-900 truncate uppercase">
                    {user.name}
@@ -277,7 +277,7 @@ export default function App() {
 
           <div className="bg-white/40 rounded-lg border border-blue-100/30 p-1 flex flex-col min-h-0 overflow-hidden">
              <h2 className="text-[7px] font-black uppercase tracking-[0.1em] text-blue-800/50 leading-none mb-1 text-center">Watchdog</h2>
-             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-0.5 p-0.5">
+             <div className="flex-1 overflow-y-auto hide-scrollbar grid grid-cols-2 gap-0.5 p-0.5 content-start">
                {watchdogs?.map((service, idx) => (
                  <div key={idx} className="flex items-center gap-0.5 bg-emerald-50 p-0.5 rounded border border-emerald-100">
                     <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full" />
